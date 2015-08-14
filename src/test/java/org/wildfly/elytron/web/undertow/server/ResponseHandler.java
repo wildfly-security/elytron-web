@@ -17,6 +17,9 @@
  */
 package org.wildfly.elytron.web.undertow.server;
 
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
+
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.Account;
 import io.undertow.server.HttpHandler;
@@ -32,16 +35,27 @@ import io.undertow.util.HttpString;
  */
 class ResponseHandler implements HttpHandler {
 
+    private final SecurityDomain securityDomain;
+
+    ResponseHandler(SecurityDomain securityDomain) {
+        this.securityDomain = securityDomain;
+    }
+
     static final HttpString PROCESSED_BY = new HttpString("ProcessedBy");
-    static final HttpString AUTHENTICATED_USER = new HttpString("AuthenticatedUser");
+    static final HttpString UNDERTOW_USER = new HttpString("UndertowUser");
+    static final HttpString ELYTRON_USER = new HttpString("ElytronUser");
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         HeaderMap responseHeader = exchange.getResponseHeaders();
         responseHeader.add(PROCESSED_BY, "ResponseHandler");
-        String user = getAuthenticatedUser(exchange);
-        if (user != null) {
-            responseHeader.add(AUTHENTICATED_USER, user);
+        String undertowUser = getUndertowUser(exchange);
+        if (undertowUser != null) {
+            responseHeader.add(UNDERTOW_USER, undertowUser);
+        }
+        String elytronUser = getElytronUser();
+        if (elytronUser != null) {
+            responseHeader.add(ELYTRON_USER, elytronUser);
         }
         if (exchange.getQueryParameters().get("logout") != null) {
             exchange.getSecurityContext().logout();
@@ -50,13 +64,24 @@ class ResponseHandler implements HttpHandler {
         exchange.endExchange();
     }
 
-    private String getAuthenticatedUser(final HttpServerExchange exchange) {
+    private String getUndertowUser(final HttpServerExchange exchange) {
         SecurityContext context = exchange.getSecurityContext();
         if (context != null) {
             Account account = context.getAuthenticatedAccount();
             if (account != null) {
                 // An account must always return a Principal otherwise it is not an Account.
                 return account.getPrincipal().getName();
+            }
+        }
+
+        return null;
+    }
+
+    private String getElytronUser() {
+        if (securityDomain != null) {
+            SecurityIdentity securityIdentity = securityDomain.getCurrentSecurityIdentity();
+            if (securityIdentity != null) {
+                return securityIdentity.getPrincipal().getName();
             }
         }
 
