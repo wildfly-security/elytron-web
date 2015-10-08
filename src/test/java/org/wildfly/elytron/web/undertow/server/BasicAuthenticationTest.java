@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,7 @@ import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
+import org.wildfly.security.password.Password;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 
@@ -76,7 +78,8 @@ public class BasicAuthenticationTest extends TestBase {
         PasswordFactory passwordFactory = PasswordFactory.getInstance(ALGORITHM_CLEAR);
 
         Map<String, SimpleRealmEntry> passwordMap = new HashMap<>();
-        passwordMap.put("elytron", new SimpleRealmEntry(passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray()))));
+        Map<String, Password> elytronMap = Collections.singletonMap("password-clear", passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray())));
+        passwordMap.put("elytron", new SimpleRealmEntry(elytronMap));
 
         SimpleMapBackedSecurityRealm simpleRealm = new SimpleMapBackedSecurityRealm();
         simpleRealm.setPasswordMap(passwordMap);
