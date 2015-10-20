@@ -18,6 +18,7 @@
 package org.wildfly.elytron.web.undertow.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.List;
 
 import io.undertow.security.api.SecurityContext;
@@ -25,6 +26,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpExchangeSpi;
 
 /**
@@ -84,6 +86,10 @@ class ElytronHttpExchange implements HttpExchangeSpi {
         if (securityContext != null) {
             securityContext.authenticationFailed(message, mechanismName);
         }
+    }
+
+    @Override
+    public void badRequest(HttpAuthenticationException error, String mechanismName) {
     }
 
 }
