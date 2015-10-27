@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -54,8 +55,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.security.auth.provider.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.provider.SimpleRealmEntry;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.SecurityDomain;
-import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
@@ -71,7 +73,7 @@ import org.wildfly.security.password.spec.ClearPasswordSpec;
 @RunWith(DefaultServer.class)
 public class BasicAuthenticationTest extends TestBase {
 
-    private static SecurityDomainHttpConfiguration httpConfiguration;
+    private static HttpAuthenticationFactory httpAuthenticationFactory;
 
     @BeforeClass
     public static void prepareSecurityConfiguration() throws NoSuchAlgorithmException, InvalidKeySpecException {
@@ -91,7 +93,15 @@ public class BasicAuthenticationTest extends TestBase {
         SecurityDomain securityDomain = builder.build();
 
         HttpServerAuthenticationMechanismFactory factory = new ServerMechanismFactoryImpl();
-        httpConfiguration = new SecurityDomainHttpConfiguration(securityDomain, factory);
+        httpAuthenticationFactory = HttpAuthenticationFactory.builder()
+            .setSecurityDomain(securityDomain)
+            .addMechanism("BASIC",
+                    MechanismConfiguration.builder()
+                        .setCredentialNameSupplier(() -> Collections.singletonList("password-clear"))
+                        .build()
+                    )
+            .setHttpServerAuthenticationMechanismFactory(factory)
+            .build();
     }
 
     @Test
@@ -110,7 +120,7 @@ public class BasicAuthenticationTest extends TestBase {
 
     @Test
     public void testBasicAuthenticationAvailable() {
-        assertTrue("Basic Authentication Supported", httpConfiguration.getMechanismNames().contains("Basic"));
+        assertTrue("Basic Authentication Supported", httpAuthenticationFactory.getMechanismNames().contains("BASIC"));
     }
 
     @Test
@@ -118,7 +128,7 @@ public class BasicAuthenticationTest extends TestBase {
         /*
          * Full Chain Set Up
          */
-        HttpHandler nextHandler = new ResponseHandler(httpConfiguration.getSecurityDomain());
+        HttpHandler nextHandler = new ResponseHandler(httpAuthenticationFactory.getSecurityDomain());
         nextHandler = new ElytronRunAsHandler(nextHandler);
         nextHandler = new BlockingHandler(nextHandler);
         nextHandler = new AuthenticationCallHandler(nextHandler);
@@ -189,10 +199,9 @@ public class BasicAuthenticationTest extends TestBase {
     }
 
     private static List<HttpServerAuthenticationMechanism> getAuthenticationMechanisms() {
-        List<String> mechanismNames = httpConfiguration.getMechanismNames();
-
-        return httpConfiguration.getSecurityDomain().createNewAuthenticationContext()
-                .createHttpServerMechanisms(httpConfiguration.getMechanismFactory(), mechanismNames.toArray(new String[mechanismNames.size()]));
+        return httpAuthenticationFactory.getMechanismNames().stream()
+            .map(httpAuthenticationFactory::createMechanism)
+            .collect(Collectors.toList());
     }
 
 }
