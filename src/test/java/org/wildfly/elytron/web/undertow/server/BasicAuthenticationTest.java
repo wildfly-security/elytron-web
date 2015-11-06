@@ -57,7 +57,9 @@ import org.wildfly.security.auth.provider.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.provider.SimpleRealmEntry;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
@@ -97,6 +99,7 @@ public class BasicAuthenticationTest extends TestBase {
             .setSecurityDomain(securityDomain)
             .addMechanism("BASIC",
                     MechanismConfiguration.builder()
+                        .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName("Elytron Realm").build())
                         .setCredentialNameSupplier(() -> Collections.singletonList("password-clear"))
                         .build()
                     )
@@ -198,9 +201,19 @@ public class BasicAuthenticationTest extends TestBase {
         return null; // Unreachable
     }
 
+    private static HttpServerAuthenticationMechanism createMechanism(final String mechanismName) {
+        try {
+            return httpAuthenticationFactory.createMechanism(mechanismName);
+        } catch (HttpAuthenticationException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     private static List<HttpServerAuthenticationMechanism> getAuthenticationMechanisms() {
         return httpAuthenticationFactory.getMechanismNames().stream()
-            .map(httpAuthenticationFactory::createMechanism)
+            .map(BasicAuthenticationTest::createMechanism)
+            .filter(m -> m != null)
             .collect(Collectors.toList());
     }
 
