@@ -59,11 +59,11 @@ import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
-import org.wildfly.security.password.Password;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 
@@ -82,8 +82,7 @@ public class BasicAuthenticationTest extends TestBase {
         PasswordFactory passwordFactory = PasswordFactory.getInstance(ALGORITHM_CLEAR);
 
         Map<String, SimpleRealmEntry> passwordMap = new HashMap<>();
-        Map<String, Password> elytronMap = Collections.singletonMap("password-clear", passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray())));
-        passwordMap.put("elytron", new SimpleRealmEntry(elytronMap));
+        passwordMap.put("elytron", new SimpleRealmEntry(Collections.singletonList(new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray()))))));
 
         SimpleMapBackedSecurityRealm simpleRealm = new SimpleMapBackedSecurityRealm();
         simpleRealm.setPasswordMap(passwordMap);
@@ -100,7 +99,6 @@ public class BasicAuthenticationTest extends TestBase {
             .addMechanism("BASIC",
                     MechanismConfiguration.builder()
                         .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName("Elytron Realm").build())
-                        .setCredentialNameSupplier(() -> Collections.singletonList("password-clear"))
                         .build()
                     )
             .setHttpServerAuthenticationMechanismFactory(factory)
