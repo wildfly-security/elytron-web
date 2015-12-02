@@ -101,7 +101,7 @@ public class BasicAuthenticationTest extends TestBase {
                         .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName("Elytron Realm").build())
                         .build()
                     )
-            .setHttpServerAuthenticationMechanismFactory(factory)
+            .setFactory(factory)
             .build();
     }
 
