@@ -90,7 +90,7 @@ public class BasicAuthenticationTest extends TestBase {
         SecurityDomain.Builder builder = SecurityDomain.builder()
                 .setDefaultRealmName("TestRealm");
 
-        builder.addRealm("TestRealm", simpleRealm);
+        builder.addRealm("TestRealm", simpleRealm).build();
         SecurityDomain securityDomain = builder.build();
 
         HttpServerAuthenticationMechanismFactory factory = new ServerMechanismFactoryImpl();
