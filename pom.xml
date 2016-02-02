@@ -22,31 +22,31 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.wildfly.security.elytron-web</groupId>
-    <artifactId>undertow-server</artifactId>
-    <version>1.0.0.Alpha4</version>
-
-    <name>WildFly Elytron Web - Undertow Server</name>
-    <description>WildFly Security SPIs</description>
-
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>18</version>
     </parent>
 
+    <groupId>org.wildfly.security.elytron-web</groupId>
+    <artifactId>elytron-web-parent</artifactId>
+    <version>1.0.0.Alpha4</version>
+    <packaging>pom</packaging>
+
+    <name>WildFly Elytron Web - Parent</name>
+    <description>Integration project for integrating Elytron based HTTP authentication with web containers.</description>
+
     <properties>
-        <version.io.undertow>1.4.0.Beta1-Elytron1</version.io.undertow>
+        <version.org.wildfly.security.elytron>1.1.0.Beta3</version.org.wildfly.security.elytron>
+        <version.org.wildfly.common>1.1.0.Final</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.1</version.org.apache.httpcomponents.httpcore>
         <version.org.jboss.logmanager>2.0.0.Final</version.org.jboss.logmanager>
         <version.org.jboss.logmanager.log4j-jboss>1.1.2.Final</version.org.jboss.logmanager.log4j-jboss>
         <version.org.jboss.modules>1.4.3.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.3.1.Final</version.org.jboss.xnio>
-        <version.org.wildfly.security.elytron>1.1.0.Beta3</version.org.wildfly.security.elytron>
         <version.junit.junit>4.11</version.junit.junit>
         <version.org.wildfly.checkstyle-config>1.0.3.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.common>1.1.0.Final</version.org.wildfly.common>
         <version.com.puppycrawl.tools.checkstyle>6.3</version.com.puppycrawl.tools.checkstyle>
 
         <test.level>INFO</test.level>
@@ -56,6 +56,10 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
+
+    <modules>
+        <module>undertow</module>
+    </modules>
 
     <build>
         <resources>
@@ -176,71 +180,69 @@
         </pluginManagement>
     </build>
 
-    <dependencies>
+    <dependencyManagement>
+        <dependencies>
 
-        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
-            <version>${version.io.undertow}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
-            <version>${version.org.wildfly.common}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron</artifactId>
-            <version>${version.org.wildfly.security.elytron}</version>
-        </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${version.org.wildfly.common}</version>
+                <scope>provided</scope>
+            </dependency>
 
-        <!--
-              Test Scope Only
-         -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${version.junit.junit}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${version.org.apache.httpcomponents.httpclient}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>${version.org.apache.httpcomponents.httpcore}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>jboss-logmanager</artifactId>
-            <version>${version.org.jboss.logmanager}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>log4j-jboss-logmanager</artifactId>
-            <version>${version.org.jboss.logmanager.log4j-jboss}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.modules</groupId>
-            <artifactId>jboss-modules</artifactId>
-            <version>${version.org.jboss.modules}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.xnio</groupId>
-            <artifactId>xnio-api</artifactId>
-            <version>${version.org.jboss.xnio}</version>
-            <scope>test</scope>
-        </dependency>
+            <!--
+                  Test Scope Only
+             -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.junit.junit}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${version.org.apache.httpcomponents.httpclient}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${version.org.apache.httpcomponents.httpcore}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logmanager</groupId>
+                <artifactId>jboss-logmanager</artifactId>
+                <version>${version.org.jboss.logmanager}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logmanager</groupId>
+                <artifactId>log4j-jboss-logmanager</artifactId>
+                <version>${version.org.jboss.logmanager.log4j-jboss}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.modules</groupId>
+                <artifactId>jboss-modules</artifactId>
+                <version>${version.org.jboss.modules}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.xnio</groupId>
+                <artifactId>xnio-api</artifactId>
+                <version>${version.org.jboss.xnio}</version>
+                <scope>test</scope>
+            </dependency>
 
-    </dependencies>
+        </dependencies>
+    </dependencyManagement>
 
 </project>
