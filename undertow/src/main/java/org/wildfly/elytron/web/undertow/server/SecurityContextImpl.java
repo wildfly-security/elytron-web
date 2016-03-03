@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
+import org.wildfly.security.http.HttpSessionSpi;
 
 /**
  * The Elytron specific {@link SecurityContext} implementation.
@@ -40,10 +41,21 @@ import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+    private final Supplier<HttpSessionSpi> httpSessionSpiSupplier;
 
     SecurityContextImpl(final HttpServerExchange exchange, final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
+        this(exchange, mechanismSupplier, null);
+    }
+
+    SecurityContextImpl(final HttpServerExchange exchange, final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier, final Supplier<HttpSessionSpi> httpSessionSpiSupplier) {
         super(checkNotNullParam("exchange", exchange));
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", mechanismSupplier);
+
+        if (httpSessionSpiSupplier != null) {
+            this.httpSessionSpiSupplier = httpSessionSpiSupplier;
+        } else {
+            this.httpSessionSpiSupplier = () -> HttpSessionSpi.NOT_SUPPORTED;
+        }
     }
 
     /**
@@ -54,6 +66,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         HttpAuthenticator authenticator = HttpAuthenticator.builder()
                 .setMechanismSupplier(mechanismSupplier)
                 .setHttpExchangeSpi(new ElytronHttpExchange(exchange))
+                .setHttpSessionSpi(httpSessionSpiSupplier.get())
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
                 .build();
