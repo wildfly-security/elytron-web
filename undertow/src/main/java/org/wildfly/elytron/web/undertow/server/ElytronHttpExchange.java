@@ -21,8 +21,12 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.List;
 
+import javax.net.ssl.SSLSession;
+
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.ServerConnection;
+import io.undertow.server.protocol.http.HttpServerConnection;
 import io.undertow.util.HttpString;
 
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -64,6 +68,19 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     @Override
     public void setResponseCode(int responseCode) {
         httpServerExchange.setResponseCode(responseCode);
+    }
+
+
+    /**
+     * @see org.wildfly.security.http.HttpExchangeSpi#getSSLSession()
+     */
+    @Override
+    public SSLSession getSSLSession() {
+        ServerConnection connection = httpServerExchange.getConnection();
+        if (connection instanceof HttpServerConnection) {
+            return ((HttpServerConnection) connection).getSslSession();
+        }
+        return null;
     }
 
     /**
