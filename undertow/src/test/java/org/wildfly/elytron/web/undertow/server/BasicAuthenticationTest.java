@@ -109,7 +109,8 @@ public class BasicAuthenticationTest extends TestBase {
     public void testNoAuthentication() throws Exception {
         DefaultServer.setTestHandler(new ResponseHandler(null));
 
-        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpClient httpClient = HttpClientBuilder.create()
+                .build();
         HttpGet get = new HttpGet(DefaultServer.getServerUri());
         HttpResponse result = httpClient.execute(get);
         assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());

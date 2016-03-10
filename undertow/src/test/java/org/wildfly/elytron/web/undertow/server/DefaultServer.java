@@ -91,6 +91,14 @@ public class DefaultServer extends BlockJUnit4ClassRunner {
         return new URI("http", null, "localhost", 7776, null, null, null);
     }
 
+    static XnioWorker getXnioWorker() {
+        return worker;
+    }
+
+    static ChannelListener getAcceptListener() {
+        return acceptListener;
+    }
+
     /**
      * @see org.junit.runners.ParentRunner#run(org.junit.runner.notification.RunNotifier)
      */
