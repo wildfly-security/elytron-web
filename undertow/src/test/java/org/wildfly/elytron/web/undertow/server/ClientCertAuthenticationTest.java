@@ -181,7 +181,6 @@ public class ClientCertAuthenticationTest {
                 .setSecurityDomain(securityDomain)
                 .setKeyManager(getKeyManager("/tls/scarab.keystore"))
                 .setTrustManager(getCATrustManager())
-                .setRequireClientAuth(true)
                 .build().create());
     }
 
@@ -192,7 +191,7 @@ public class ClientCertAuthenticationTest {
         performClientCertTest(new ServerSSLContextBuilder()
                 .setKeyManager(getKeyManager("/tls/scarab.keystore"))
                 .setTrustManager(getCATrustManager())
-                .setRequireClientAuth(true)
+                .setWantClientAuth(true)
                 .build().create());
     }
 
