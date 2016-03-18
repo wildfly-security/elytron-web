@@ -21,7 +21,10 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 import io.undertow.security.idm.Account;
 
 import java.security.Principal;
+import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.wildfly.security.auth.server.SecurityIdentity;
 
@@ -34,10 +37,13 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 public class ElytronAccount implements Account {
 
     private final SecurityIdentity securityIdentity;
+    private final Set<String> roles;
 
     ElytronAccount(final SecurityIdentity securityIdentity) {
         checkNotNullParam("securityIdentity", securityIdentity);
         this.securityIdentity = securityIdentity;
+        this.roles = Collections.unmodifiableSet(
+                StreamSupport.stream(securityIdentity.getRoles().spliterator(), true).collect(Collectors.toSet()));
     }
 
     /**
@@ -53,7 +59,7 @@ public class ElytronAccount implements Account {
      */
     @Override
     public Set<String> getRoles() {
-        return securityIdentity.getRoles();
+        return roles;
     }
 
     /**
