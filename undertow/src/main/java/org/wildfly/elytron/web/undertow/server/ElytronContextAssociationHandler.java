@@ -18,16 +18,16 @@
 package org.wildfly.elytron.web.undertow.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
-import io.undertow.security.api.SecurityContext;
-import io.undertow.security.handlers.AbstractSecurityContextAssociationHandler;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
-import org.wildfly.security.http.HttpSessionSpi;
+
+import io.undertow.security.api.SecurityContext;
+import io.undertow.security.handlers.AbstractSecurityContextAssociationHandler;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 
 /**
  *
@@ -52,17 +52,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
      */
     @Override
     public SecurityContext createSecurityContext(HttpServerExchange exchange) {
-        return new SecurityContextImpl(exchange, mechanismSupplier, createHttpSessionSpi(exchange));
-    }
-
-    /**
-     * Returns a {@link Supplier} that provides a {@link HttpSessionSpi} instance.
-     *
-     * @param exchange the current http exchange
-     * @return a {@link Supplier} that provides a {@link HttpSessionSpi} instance
-     */
-    protected Supplier<HttpSessionSpi> createHttpSessionSpi(HttpServerExchange exchange) {
-        return () -> new ElytronHttpSession(exchange);
+        return new SecurityContextImpl(exchange, mechanismSupplier);
     }
 
 }
