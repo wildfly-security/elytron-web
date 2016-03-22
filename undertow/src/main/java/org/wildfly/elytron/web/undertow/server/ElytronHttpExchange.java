@@ -26,6 +26,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -37,12 +38,19 @@ import io.undertow.server.ServerConnection;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
 import io.undertow.server.protocol.http.HttpServerConnection;
+import io.undertow.server.session.Session;
+import io.undertow.server.session.SessionConfig;
+import io.undertow.server.session.SessionManager;
+import io.undertow.util.AbstractAttachable;
+import io.undertow.util.AttachmentKey;
 import io.undertow.util.HttpString;
 
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpExchangeSpi;
+import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerCookie;
+import org.wildfly.security.http.Scope;
 
 /**
  * Implementation of {@link HttpExchangeSpi} to wrap access to the Undertow specific {@link HttpServerExchange}.
@@ -50,6 +58,8 @@ import org.wildfly.security.http.HttpServerCookie;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class ElytronHttpExchange implements HttpExchangeSpi {
+
+    private static final AttachmentKey<HttpScope> HTTP_SCOPE_ATTACHMENT_KEY = AttachmentKey.create(HttpScope.class);
 
     private final HttpServerExchange httpServerExchange;
 
@@ -227,4 +237,115 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     public OutputStream getResponseOutputStream() {
         return null;
     }
+
+    @Override
+    public HttpScope getScope(Scope scope) {
+        switch (scope) {
+            case APPLICATION:
+                return null;
+            case CONNECTION:
+                return getScope(httpServerExchange.getConnection());
+            case EXCHANGE:
+                return getScope(httpServerExchange);
+            case GLOBAL:
+                return null;
+            case SESSION:
+                SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
+                SessionConfig sessionConfig = httpServerExchange.getAttachment(SessionConfig.ATTACHMENT_KEY);
+                Session session = sessionManager.getSession(httpServerExchange, sessionConfig);
+                if (session == null) {
+                    session = sessionManager.createSession(httpServerExchange, sessionConfig);
+                }
+
+                return new WrapperScope(session::getAttribute, session::setAttribute);
+            case SSL_SESSION:
+                return getScope(getSSLSession());
+        }
+        return null; // Unreachable
+    }
+
+    private HttpScope getScope(AbstractAttachable attachable) {
+        HttpScope httpScope = attachable.getAttachment(HTTP_SCOPE_ATTACHMENT_KEY);
+        if (httpScope == null) {
+            synchronized (attachable) {
+                httpScope = attachable.getAttachment(HTTP_SCOPE_ATTACHMENT_KEY);
+                if (httpScope == null) {
+                    httpScope = new MapBackedScope(new HashMap<>());
+                    attachable.putAttachment(HTTP_SCOPE_ATTACHMENT_KEY, httpScope);
+                }
+            }
+        }
+
+        return httpScope;
+    }
+
+    private HttpScope getScope(final SSLSession sslSession) {
+        if (sslSession == null) {
+            return null;
+        }
+
+        return new WrapperScope(sslSession::getValue, sslSession::putValue);
+    }
+
+    private class WrapperScope implements HttpScope {
+
+        private final Function<String, Object> getter;
+        private final BiConsumer<String, Object> putter;
+
+
+        WrapperScope(Function<String, Object> getter, BiConsumer<String, Object> putter) {
+            this.getter = getter;
+            this.putter = putter;
+        }
+
+        @Override
+        public boolean supportsAttachments() {
+            return true;
+        }
+
+        @Override
+        public void setAttachment(String key, Object value) {
+            putter.accept(key, value);
+        }
+
+        @Override
+        public Object getAttachment(String key) {
+            return getter.apply(key);
+        }
+
+    }
+
+
+    private class MapBackedScope implements HttpScope {
+
+        private final Map<String, Object> attachmentMap;
+
+        MapBackedScope(Map<String, Object> attachmentMap) {
+            this.attachmentMap = attachmentMap;
+        }
+
+        @Override
+        public boolean supportsAttachments() {
+            return true;
+        }
+
+        @Override
+        public void setAttachment(String key, Object value) {
+            if (value != null) {
+                attachmentMap.put(key, value);
+            } else {
+                attachmentMap.remove(key);
+            }
+        }
+
+        @Override
+        public Object getAttachment(String key) {
+
+            return HttpScope.super.getAttachment(key);
+        }
+
+
+    }
+
+
 }

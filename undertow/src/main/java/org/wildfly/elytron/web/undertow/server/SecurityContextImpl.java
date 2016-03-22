@@ -19,11 +19,6 @@ package org.wildfly.elytron.web.undertow.server;
 
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
-import io.undertow.security.api.AuthenticationMechanism;
-import io.undertow.security.api.SecurityContext;
-import io.undertow.security.idm.IdentityManager;
-import io.undertow.security.impl.AbstractSecurityContext;
-import io.undertow.server.HttpServerExchange;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -31,7 +26,12 @@ import java.util.function.Supplier;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
-import org.wildfly.security.http.HttpSessionSpi;
+
+import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.SecurityContext;
+import io.undertow.security.idm.IdentityManager;
+import io.undertow.security.impl.AbstractSecurityContext;
+import io.undertow.server.HttpServerExchange;
 
 /**
  * The Elytron specific {@link SecurityContext} implementation.
@@ -41,21 +41,10 @@ import org.wildfly.security.http.HttpSessionSpi;
 public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
-    private final Supplier<HttpSessionSpi> httpSessionSpiSupplier;
 
     SecurityContextImpl(final HttpServerExchange exchange, final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
-        this(exchange, mechanismSupplier, null);
-    }
-
-    SecurityContextImpl(final HttpServerExchange exchange, final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier, final Supplier<HttpSessionSpi> httpSessionSpiSupplier) {
         super(checkNotNullParam("exchange", exchange));
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", mechanismSupplier);
-
-        if (httpSessionSpiSupplier != null) {
-            this.httpSessionSpiSupplier = httpSessionSpiSupplier;
-        } else {
-            this.httpSessionSpiSupplier = () -> HttpSessionSpi.NOT_SUPPORTED;
-        }
     }
 
     /**
@@ -66,7 +55,6 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         HttpAuthenticator authenticator = HttpAuthenticator.builder()
                 .setMechanismSupplier(mechanismSupplier)
                 .setHttpExchangeSpi(new ElytronHttpExchange(exchange))
-                .setHttpSessionSpi(httpSessionSpiSupplier.get())
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
                 .build();
