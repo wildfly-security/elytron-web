@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -258,7 +259,11 @@ class ElytronHttpExchange implements HttpExchangeSpi {
                     session = sessionManager.createSession(httpServerExchange, sessionConfig);
                 }
 
-                return new WrapperScope(session::getAttribute, session::setAttribute);
+                final Session finalSession = session;
+                return new WrapperScope(session::getAttribute, session::setAttribute, () -> {
+                    finalSession.invalidate(httpServerExchange);
+                    return true;
+                });
             case SSL_SESSION:
                 return getScope(getSSLSession());
         }
@@ -281,7 +286,10 @@ class ElytronHttpExchange implements HttpExchangeSpi {
             SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
             Session session = sessionManager.getSession(id);
             if (session != null) {
-                return new WrapperScope(session::getAttribute, session::setAttribute);
+                return new WrapperScope(session::getAttribute, session::setAttribute, () -> {
+                    session.invalidate(httpServerExchange);
+                    return true;
+                });
             }
         }
         return null;
@@ -314,13 +322,17 @@ class ElytronHttpExchange implements HttpExchangeSpi {
 
         private final Function<String, Object> getter;
         private final BiConsumer<String, Object> putter;
+        private final BooleanSupplier invalidator;
 
-
-        WrapperScope(Function<String, Object> getter, BiConsumer<String, Object> putter) {
+        WrapperScope(Function<String, Object> getter, BiConsumer<String, Object> putter, BooleanSupplier invalidator) {
             this.getter = getter;
             this.putter = putter;
+            this.invalidator = invalidator;
         }
 
+        WrapperScope(Function<String, Object> getter, BiConsumer<String, Object> putter) {
+            this(getter, putter, null);
+        }
         @Override
         public boolean supportsAttachments() {
             return true;
@@ -334,6 +346,16 @@ class ElytronHttpExchange implements HttpExchangeSpi {
         @Override
         public Object getAttachment(String key) {
             return getter.apply(key);
+        }
+
+        @Override
+        public boolean supportsInvalidation() {
+            return invalidator != null;
+        }
+
+        @Override
+        public boolean invalidate() {
+            return invalidator.getAsBoolean();
         }
 
     }
