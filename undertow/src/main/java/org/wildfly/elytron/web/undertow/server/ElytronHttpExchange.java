@@ -22,6 +22,7 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -262,6 +263,28 @@ class ElytronHttpExchange implements HttpExchangeSpi {
                 return getScope(getSSLSession());
         }
         return null; // Unreachable
+    }
+
+    @Override
+    public Collection<String> getScopeIds(Scope scope) {
+        if (scope == Scope.SESSION) {
+            SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
+            return sessionManager.getAllSessions();
+        }
+
+        return null;
+    }
+
+    @Override
+    public HttpScope getScope(Scope scope, String id) {
+        if (scope == Scope.SESSION) {
+            SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
+            Session session = sessionManager.getSession(id);
+            if (session != null) {
+                return new WrapperScope(session::getAttribute, session::setAttribute);
+            }
+        }
+        return null;
     }
 
     private HttpScope getScope(AbstractAttachable attachable) {
