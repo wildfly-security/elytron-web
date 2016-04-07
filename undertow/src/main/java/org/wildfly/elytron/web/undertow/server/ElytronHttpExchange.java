@@ -260,7 +260,7 @@ class ElytronHttpExchange implements HttpExchangeSpi {
                 }
 
                 final Session finalSession = session;
-                return new WrapperScope(session::getAttribute, session::setAttribute, () -> {
+                return new WrapperScope(session.getId(), session::getAttribute, session::setAttribute, () -> {
                     finalSession.invalidate(httpServerExchange);
                     return true;
                 });
@@ -286,7 +286,7 @@ class ElytronHttpExchange implements HttpExchangeSpi {
             SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
             Session session = sessionManager.getSession(id);
             if (session != null) {
-                return new WrapperScope(session::getAttribute, session::setAttribute, () -> {
+                return new WrapperScope(session.getId(), session::getAttribute, session::setAttribute, () -> {
                     session.invalidate(httpServerExchange);
                     return true;
                 });
@@ -320,19 +320,27 @@ class ElytronHttpExchange implements HttpExchangeSpi {
 
     private class WrapperScope implements HttpScope {
 
+        private final String id;
         private final Function<String, Object> getter;
         private final BiConsumer<String, Object> putter;
         private final BooleanSupplier invalidator;
 
-        WrapperScope(Function<String, Object> getter, BiConsumer<String, Object> putter, BooleanSupplier invalidator) {
+        WrapperScope(String id, Function<String, Object> getter, BiConsumer<String, Object> putter, BooleanSupplier invalidator) {
+            this.id = id;
             this.getter = getter;
             this.putter = putter;
             this.invalidator = invalidator;
         }
 
         WrapperScope(Function<String, Object> getter, BiConsumer<String, Object> putter) {
-            this(getter, putter, null);
+            this(null, getter, putter, null);
         }
+
+        @Override
+        public String getID() {
+            return id;
+        }
+
         @Override
         public boolean supportsAttachments() {
             return true;
