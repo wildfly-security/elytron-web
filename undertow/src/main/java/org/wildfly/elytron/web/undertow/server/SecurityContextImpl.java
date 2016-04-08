@@ -20,7 +20,6 @@ package org.wildfly.elytron.web.undertow.server;
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -28,6 +27,7 @@ import java.util.function.Supplier;
 
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
+import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.Scope;
 
@@ -45,10 +45,12 @@ import io.undertow.server.HttpServerExchange;
 public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+    private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
 
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
+        this.scopeResolvers = builder.scopeResolvers;
     }
 
     /**
@@ -58,7 +60,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     public boolean authenticate() {
         HttpAuthenticator authenticator = HttpAuthenticator.builder()
                 .setMechanismSupplier(mechanismSupplier)
-                .setHttpExchangeSpi(new ElytronHttpExchange(exchange))
+                .setHttpExchangeSpi(new ElytronHttpExchange(exchange, scopeResolvers))
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
                 .build();
@@ -112,7 +114,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
         HttpServerExchange exchange;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
-        Map<Scope, Function<String, InputStream>> resourceResolvers;
+        Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
 
         private Builder() {
         }
@@ -129,8 +131,8 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return this;
         }
 
-        Builder setResourceResolvers(Map<Scope, Function<String, InputStream>> resourceResolvers) {
-            this.resourceResolvers = resourceResolvers;
+        Builder setScopeResolvers(Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers) {
+            this.scopeResolvers = scopeResolvers;
 
             return this;
         }
