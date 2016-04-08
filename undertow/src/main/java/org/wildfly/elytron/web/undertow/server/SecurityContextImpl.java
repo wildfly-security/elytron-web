@@ -20,12 +20,16 @@ package org.wildfly.elytron.web.undertow.server;
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
+import org.wildfly.security.http.Scope;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
@@ -42,9 +46,9 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
 
-    SecurityContextImpl(final HttpServerExchange exchange, final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
-        super(checkNotNullParam("exchange", exchange));
-        this.mechanismSupplier = checkNotNullParam("mechanismSupplier", mechanismSupplier);
+    private SecurityContextImpl(Builder builder) {
+        super(checkNotNullParam("exchange", builder.exchange));
+        this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
     }
 
     /**
@@ -100,4 +104,39 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         throw new UnsupportedOperationException();
     }
 
+    static Builder builder() {
+        return new Builder();
+    }
+
+    static class Builder {
+
+        HttpServerExchange exchange;
+        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+        Map<Scope, Function<String, InputStream>> resourceResolvers;
+
+        private Builder() {
+        }
+
+        Builder setExchange(HttpServerExchange exchange) {
+            this.exchange = exchange;
+
+            return this;
+        }
+
+        Builder setMechanismSupplier(Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
+            this.mechanismSupplier = mechanismSupplier;
+
+            return this;
+        }
+
+        Builder setResourceResolvers(Map<Scope, Function<String, InputStream>> resourceResolvers) {
+            this.resourceResolvers = resourceResolvers;
+
+            return this;
+        }
+
+        SecurityContext build() {
+            return new SecurityContextImpl(this);
+        }
+    }
 }

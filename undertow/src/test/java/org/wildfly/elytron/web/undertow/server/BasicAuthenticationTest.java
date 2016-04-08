@@ -135,7 +135,10 @@ public class BasicAuthenticationTest extends TestBase {
         nextHandler = new BlockingHandler(nextHandler);
         nextHandler = new AuthenticationCallHandler(nextHandler);
         nextHandler = new AuthenticationConstraintHandler(nextHandler);
-        nextHandler = new ElytronContextAssociationHandler(nextHandler, BasicAuthenticationTest::getAuthenticationMechanisms);
+        nextHandler = ElytronContextAssociationHandler.builder()
+                        .setNext(nextHandler)
+                        .setMechanismSupplier(BasicAuthenticationTest::getAuthenticationMechanisms)
+                        .build();
 
         DefaultServer.setTestHandler(nextHandler);
 
