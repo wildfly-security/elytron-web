@@ -54,6 +54,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.http.HttpAuthenticationException;
@@ -97,7 +98,7 @@ public class ClientCertAuthenticationTest {
                 .addRealm("KeystoreRealm", securityRealm)
                     .build()
                 .setDefaultRealmName("KeystoreRealm")
-                .setPrincipalDecoder(new X500AttributePrincipalDecoder("2.5.4.3", 1))
+                .setPrincipalDecoder(PrincipalDecoder.aggregate(new X500AttributePrincipalDecoder("2.5.4.3", 1), PrincipalDecoder.DEFAULT))
                 .setPreRealmRewriter(s -> s.toLowerCase())
                 .build();
 
