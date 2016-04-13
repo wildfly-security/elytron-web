@@ -27,12 +27,17 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLSession;
+
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.http.HttpAuthenticationException;
+import org.wildfly.security.http.HttpExchangeSpi;
+import org.wildfly.security.http.HttpScope;
+import org.wildfly.security.http.HttpServerCookie;
+import org.wildfly.security.http.Scope;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
@@ -47,13 +52,6 @@ import io.undertow.util.AbstractAttachable;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.HttpString;
 
-import org.wildfly.security.auth.server.SecurityIdentity;
-import org.wildfly.security.http.HttpAuthenticationException;
-import org.wildfly.security.http.HttpExchangeSpi;
-import org.wildfly.security.http.HttpScope;
-import org.wildfly.security.http.HttpServerCookie;
-import org.wildfly.security.http.Scope;
-
 /**
  * Implementation of {@link HttpExchangeSpi} to wrap access to the Undertow specific {@link HttpServerExchange}.
  *
@@ -64,9 +62,11 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     private static final AttachmentKey<HttpScope> HTTP_SCOPE_ATTACHMENT_KEY = AttachmentKey.create(HttpScope.class);
 
     private final HttpServerExchange httpServerExchange;
+    private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
 
-    ElytronHttpExchange(final HttpServerExchange httpServerExchange) {
+    ElytronHttpExchange(final HttpServerExchange httpServerExchange, final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers) {
         this.httpServerExchange = checkNotNullParam("httpServerExchange", httpServerExchange);
+        this.scopeResolvers = scopeResolvers;
     }
 
     /**
@@ -242,6 +242,10 @@ class ElytronHttpExchange implements HttpExchangeSpi {
 
     @Override
     public HttpScope getScope(Scope scope) {
+        if (scopeResolvers.containsKey(scope)) {
+            return scopeResolvers.get(scope).apply(httpServerExchange);
+        }
+
         switch (scope) {
             case APPLICATION:
                 return null;
@@ -259,11 +263,7 @@ class ElytronHttpExchange implements HttpExchangeSpi {
                     session = sessionManager.createSession(httpServerExchange, sessionConfig);
                 }
 
-                final Session finalSession = session;
-                return new WrapperScope(session.getId(), session::getAttribute, session::setAttribute, () -> {
-                    finalSession.invalidate(httpServerExchange);
-                    return true;
-                });
+                return toScope(session);
             case SSL_SESSION:
                 return getScope(getSSLSession());
         }
@@ -286,13 +286,47 @@ class ElytronHttpExchange implements HttpExchangeSpi {
             SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
             Session session = sessionManager.getSession(id);
             if (session != null) {
-                return new WrapperScope(session.getId(), session::getAttribute, session::setAttribute, () -> {
-                    session.invalidate(httpServerExchange);
-                    return true;
-                });
+                return toScope(session);
             }
         }
         return null;
+    }
+
+    private HttpScope toScope(final Session session) {
+        return new HttpScope() {
+
+            @Override
+            public String getID() {
+                return session.getId();
+            }
+
+            @Override
+            public boolean supportsAttachments() {
+                return true;
+            }
+
+            @Override
+            public void setAttachment(String key, Object value) {
+                session.setAttribute(key, value);
+            }
+
+            @Override
+            public Object getAttachment(String key) {
+                return session.getAttribute(key);
+            }
+
+            @Override
+            public boolean supportsInvalidation() {
+                return true;
+            }
+
+            @Override
+            public boolean invalidate() {
+                session.invalidate(httpServerExchange);
+                return true;
+            }
+
+        };
     }
 
     private HttpScope getScope(AbstractAttachable attachable) {
@@ -301,7 +335,30 @@ class ElytronHttpExchange implements HttpExchangeSpi {
             synchronized (attachable) {
                 httpScope = attachable.getAttachment(HTTP_SCOPE_ATTACHMENT_KEY);
                 if (httpScope == null) {
-                    httpScope = new MapBackedScope(new HashMap<>());
+                    final Map<String, Object> storageMap = new HashMap<>();
+                    httpScope = new HttpScope() {
+
+                        @Override
+                        public boolean supportsAttachments() {
+                            return true;
+                        }
+
+                        @Override
+                        public void setAttachment(String key, Object value) {
+                            if (value != null) {
+                                storageMap.put(key, value);
+                            } else {
+                                storageMap.remove(key);
+                            }
+                        }
+
+                        @Override
+                        public Object getAttachment(String key) {
+                            return storageMap.get(key);
+                        }
+
+                    };
+
                     attachable.putAttachment(HTTP_SCOPE_ATTACHMENT_KEY, httpScope);
                 }
             }
@@ -315,87 +372,24 @@ class ElytronHttpExchange implements HttpExchangeSpi {
             return null;
         }
 
-        return new WrapperScope(sslSession::getValue, sslSession::putValue);
-    }
+        return new HttpScope() {
 
-    private class WrapperScope implements HttpScope {
-
-        private final String id;
-        private final Function<String, Object> getter;
-        private final BiConsumer<String, Object> putter;
-        private final BooleanSupplier invalidator;
-
-        WrapperScope(String id, Function<String, Object> getter, BiConsumer<String, Object> putter, BooleanSupplier invalidator) {
-            this.id = id;
-            this.getter = getter;
-            this.putter = putter;
-            this.invalidator = invalidator;
-        }
-
-        WrapperScope(Function<String, Object> getter, BiConsumer<String, Object> putter) {
-            this(null, getter, putter, null);
-        }
-
-        @Override
-        public String getID() {
-            return id;
-        }
-
-        @Override
-        public boolean supportsAttachments() {
-            return true;
-        }
-
-        @Override
-        public void setAttachment(String key, Object value) {
-            putter.accept(key, value);
-        }
-
-        @Override
-        public Object getAttachment(String key) {
-            return getter.apply(key);
-        }
-
-        @Override
-        public boolean supportsInvalidation() {
-            return invalidator != null;
-        }
-
-        @Override
-        public boolean invalidate() {
-            return invalidator.getAsBoolean();
-        }
-
-    }
-
-
-    private class MapBackedScope implements HttpScope {
-
-        private final Map<String, Object> attachmentMap;
-
-        MapBackedScope(Map<String, Object> attachmentMap) {
-            this.attachmentMap = attachmentMap;
-        }
-
-        @Override
-        public boolean supportsAttachments() {
-            return true;
-        }
-
-        @Override
-        public void setAttachment(String key, Object value) {
-            if (value != null) {
-                attachmentMap.put(key, value);
-            } else {
-                attachmentMap.remove(key);
+            @Override
+            public boolean supportsAttachments() {
+                return true;
             }
-        }
 
-        @Override
-        public Object getAttachment(String key) {
+            @Override
+            public void setAttachment(String key, Object value) {
+                sslSession.putValue(key, value);
+            }
 
-            return HttpScope.super.getAttachment(key);
-        }
+            @Override
+            public Object getAttachment(String key) {
+                return sslSession.getValue(key);
+            }
+
+        };
 
 
     }

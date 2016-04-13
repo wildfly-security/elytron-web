@@ -218,8 +218,10 @@ public class ClientCertAuthenticationTest {
         nextHandler = new BlockingHandler(nextHandler);
         nextHandler = new AuthenticationCallHandler(nextHandler);
         nextHandler = new AuthenticationConstraintHandler(nextHandler);
-        nextHandler = new ElytronContextAssociationHandler(nextHandler,
-                ClientCertAuthenticationTest::getAuthenticationMechanisms);
+        nextHandler = ElytronContextAssociationHandler.builder()
+                        .setNext(nextHandler)
+                        .setMechanismSupplier(ClientCertAuthenticationTest::getAuthenticationMechanisms)
+                        .build();
 
         DefaultServer.setTestHandler(nextHandler);
 

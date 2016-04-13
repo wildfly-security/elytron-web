@@ -21,11 +21,15 @@ import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
+import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
+import org.wildfly.security.http.Scope;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
@@ -41,10 +45,12 @@ import io.undertow.server.HttpServerExchange;
 public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+    private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
 
-    SecurityContextImpl(final HttpServerExchange exchange, final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
-        super(checkNotNullParam("exchange", exchange));
-        this.mechanismSupplier = checkNotNullParam("mechanismSupplier", mechanismSupplier);
+    private SecurityContextImpl(Builder builder) {
+        super(checkNotNullParam("exchange", builder.exchange));
+        this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
+        this.scopeResolvers = builder.scopeResolvers;
     }
 
     /**
@@ -54,7 +60,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     public boolean authenticate() {
         HttpAuthenticator authenticator = HttpAuthenticator.builder()
                 .setMechanismSupplier(mechanismSupplier)
-                .setHttpExchangeSpi(new ElytronHttpExchange(exchange))
+                .setHttpExchangeSpi(new ElytronHttpExchange(exchange, scopeResolvers))
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
                 .build();
@@ -100,4 +106,39 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         throw new UnsupportedOperationException();
     }
 
+    static Builder builder() {
+        return new Builder();
+    }
+
+    static class Builder {
+
+        HttpServerExchange exchange;
+        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+        Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
+
+        private Builder() {
+        }
+
+        Builder setExchange(HttpServerExchange exchange) {
+            this.exchange = exchange;
+
+            return this;
+        }
+
+        Builder setMechanismSupplier(Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
+            this.mechanismSupplier = mechanismSupplier;
+
+            return this;
+        }
+
+        Builder setScopeResolvers(Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers) {
+            this.scopeResolvers = scopeResolvers;
+
+            return this;
+        }
+
+        SecurityContext build() {
+            return new SecurityContextImpl(this);
+        }
+    }
 }
