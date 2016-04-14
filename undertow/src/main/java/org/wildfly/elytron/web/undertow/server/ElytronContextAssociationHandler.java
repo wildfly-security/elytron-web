@@ -43,6 +43,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
+    private final ScopeSessionListener scopeSessionListener;
 
     /**
      * @param next
@@ -52,6 +53,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
 
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.scopeResolvers = builder.scopeResolvers;
+        this.scopeSessionListener = builder.scopeSessionListener;
     }
 
     /**
@@ -75,6 +77,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         HttpHandler next;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers = new HashMap<>();
+        ScopeSessionListener scopeSessionListener;
 
         private Builder() {
         }
@@ -93,6 +96,12 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
 
         public Builder addScopeResolver(Scope scope, Function<HttpServerExchange, HttpScope> scopeResolver) {
             scopeResolvers.put(scope, scopeResolver);
+
+            return this;
+        }
+
+        public Builder setScopeSessionListener(ScopeSessionListener scopeSessionListener) {
+            this.scopeSessionListener = scopeSessionListener;
 
             return this;
         }

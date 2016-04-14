@@ -27,6 +27,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,7 @@ import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpExchangeSpi;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerCookie;
+import org.wildfly.security.http.HttpServerScopes;
 import org.wildfly.security.http.Scope;
 
 import io.undertow.security.api.SecurityContext;
@@ -63,10 +65,14 @@ class ElytronHttpExchange implements HttpExchangeSpi {
 
     private final HttpServerExchange httpServerExchange;
     private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
+    private final ScopeSessionListener scopeSessionListener;
 
-    ElytronHttpExchange(final HttpServerExchange httpServerExchange, final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers) {
+    ElytronHttpExchange(final HttpServerExchange httpServerExchange,
+            final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers,
+            final ScopeSessionListener scopeSessionListener) {
         this.httpServerExchange = checkNotNullParam("httpServerExchange", httpServerExchange);
         this.scopeResolvers = scopeResolvers;
+        this.scopeSessionListener = scopeSessionListener;
     }
 
     /**
@@ -325,6 +331,20 @@ class ElytronHttpExchange implements HttpExchangeSpi {
                 session.invalidate(httpServerExchange);
                 return true;
             }
+
+            @Override
+            public boolean supportsNotifications() {
+                return scopeSessionListener != null;
+            }
+
+            @Override
+            public void registerForNotification(Consumer<HttpServerScopes> notificationConsumer) {
+                if (scopeSessionListener != null) {
+                    scopeSessionListener.registerListener(session, notificationConsumer);
+                }
+            }
+
+
 
         };
     }
