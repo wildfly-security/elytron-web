@@ -61,7 +61,7 @@ import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
-import org.wildfly.security.ssl.ServerSSLContextBuilder;
+import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.security.x500.X500AttributePrincipalDecoder;
 import org.xnio.OptionMap;
 import org.xnio.Options;
@@ -178,7 +178,7 @@ public class ClientCertAuthenticationTest {
     // Test authentication attached to SSLSession.
     @Test
     public void testClientCertFromSession() throws Exception {
-        performClientCertTest(new ServerSSLContextBuilder()
+        performClientCertTest(new SSLContextBuilder()
                 .setSecurityDomain(securityDomain)
                 .setKeyManager(getKeyManager("/tls/scarab.keystore"))
                 .setTrustManager(getCATrustManager())
@@ -189,7 +189,7 @@ public class ClientCertAuthenticationTest {
 
     @Test
     public void testClientCertAfterSession() throws Exception{
-        performClientCertTest(new ServerSSLContextBuilder()
+        performClientCertTest(new SSLContextBuilder()
                 .setKeyManager(getKeyManager("/tls/scarab.keystore"))
                 .setTrustManager(getCATrustManager())
                 .setWantClientAuth(true)
