@@ -46,11 +46,13 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
+    private final ScopeSessionListener scopeSessionListener;
 
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.scopeResolvers = builder.scopeResolvers;
+        this.scopeSessionListener = builder.scopeSessionListener;
     }
 
     /**
@@ -60,7 +62,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     public boolean authenticate() {
         HttpAuthenticator authenticator = HttpAuthenticator.builder()
                 .setMechanismSupplier(mechanismSupplier)
-                .setHttpExchangeSpi(new ElytronHttpExchange(exchange, scopeResolvers))
+                .setHttpExchangeSpi(new ElytronHttpExchange(exchange, scopeResolvers, scopeSessionListener))
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
                 .build();
@@ -115,6 +117,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         HttpServerExchange exchange;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
+        ScopeSessionListener scopeSessionListener;
 
         private Builder() {
         }
@@ -133,6 +136,12 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
         Builder setScopeResolvers(Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers) {
             this.scopeResolvers = scopeResolvers;
+
+            return this;
+        }
+
+        Builder setScopeSessionListener(ScopeSessionListener scopeSessionListener) {
+            this.scopeSessionListener = scopeSessionListener;
 
             return this;
         }
