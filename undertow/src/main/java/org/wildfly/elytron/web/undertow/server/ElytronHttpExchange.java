@@ -103,13 +103,12 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     }
 
     /**
-     * @see org.wildfly.security.http.HttpExchangeSpi#setResponseCode(int)
+     * @see org.wildfly.security.http.HttpExchangeSpi#setStatusCode(int)
      */
     @Override
-    public void setResponseCode(int responseCode) {
-        httpServerExchange.setStatusCode(responseCode);
+    public void setStatusCode(int statusCode) {
+        httpServerExchange.setStatusCode(statusCode);
     }
-
 
     /**
      * @see org.wildfly.security.http.HttpExchangeSpi#getSSLSession()
