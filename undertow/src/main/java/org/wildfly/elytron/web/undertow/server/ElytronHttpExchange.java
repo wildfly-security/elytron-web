@@ -22,6 +22,7 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
@@ -163,17 +164,17 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     }
 
     @Override
-    public Map<String, String[]> getRequestParameters() {
-        HashMap<String, String[]> parameters = new HashMap<>();
+    public Map<String, List<String>> getRequestParameters() {
+        HashMap<String, List<String>> parameters = new HashMap<>();
         Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
 
-        queryParameters.forEach((name, values) -> parameters.put(name, values.toArray(new String[values.size()])));
+        queryParameters.forEach((name, values) -> parameters.put(name, new ArrayList<String>(values)));
 
         return parameters;
     }
 
     @Override
-    public HttpServerCookie[] getCookies() {
+    public List<HttpServerCookie> getCookies() {
         Map<String, Cookie> cookies = httpServerExchange.getRequestCookies();
         return cookies.values().stream().map((Function<Cookie, HttpServerCookie>) cookie -> new HttpServerCookie() {
             @Override
@@ -215,7 +216,7 @@ class ElytronHttpExchange implements HttpExchangeSpi {
             public boolean isHttpOnly() {
                 return cookie.isHttpOnly();
             }
-        }).collect(Collectors.toList()).toArray(new HttpServerCookie[cookies.size()]);
+        }).collect(Collectors.toList());
     }
 
     @Override
