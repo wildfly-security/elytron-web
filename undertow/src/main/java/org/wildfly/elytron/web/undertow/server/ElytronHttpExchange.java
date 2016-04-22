@@ -19,11 +19,13 @@ package org.wildfly.elytron.web.undertow.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +33,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.net.ssl.SSLSession;
 
@@ -47,6 +50,10 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.ServerConnection;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
+import io.undertow.server.handlers.form.FormData;
+import io.undertow.server.handlers.form.FormData.FormValue;
+import io.undertow.server.handlers.form.FormDataParser;
+import io.undertow.server.handlers.form.FormParserFactory;
 import io.undertow.server.protocol.http.HttpServerConnection;
 import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionConfig;
@@ -67,6 +74,9 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     private final HttpServerExchange httpServerExchange;
     private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
     private final ScopeSessionListener scopeSessionListener;
+    private final FormParserFactory formParserFactory = FormParserFactory.builder().build();
+
+    private Map<String, List<String>> requestParameters;
 
     ElytronHttpExchange(final HttpServerExchange httpServerExchange,
             final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers,
@@ -97,7 +107,7 @@ class ElytronHttpExchange implements HttpExchangeSpi {
      */
     @Override
     public void setResponseCode(int responseCode) {
-        httpServerExchange.setResponseCode(responseCode);
+        httpServerExchange.setStatusCode(responseCode);
     }
 
 
@@ -165,12 +175,47 @@ class ElytronHttpExchange implements HttpExchangeSpi {
 
     @Override
     public Map<String, List<String>> getRequestParameters() {
-        HashMap<String, List<String>> parameters = new HashMap<>();
-        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
+        if (requestParameters == null) {
+            synchronized(this) {
+                if (requestParameters == null) {
+                    HashMap<String, List<String>> parameters = new HashMap<>();
 
-        queryParameters.forEach((name, values) -> parameters.put(name, new ArrayList<String>(values)));
+                    Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
 
-        return parameters;
+                    FormDataParser parser = formParserFactory.createParser(httpServerExchange);
+
+                    if (parser != null) {
+                        try {
+                            FormData data = parser.parseBlocking();
+
+                            for (String name : queryParameters.keySet()) {
+                                List<String> values = new ArrayList<>(queryParameters.get(name));
+                                if (data.contains(name)) {
+                                    Deque<FormValue> formValues = data.get(name);
+                                    formValues.stream().filter((FormValue fv) -> fv.isFile() == false)
+                                            .forEach((FormValue fv) -> values.add(fv.getValue()));
+                                }
+                                parameters.put(name, Collections.unmodifiableList(values));
+                            }
+
+                            StreamSupport
+                                    .stream(data.spliterator(), true)
+                                    .filter((String s) -> parameters.containsKey(s) == false)
+                                    .forEach(
+                                            (String s) -> parameters.put(s,
+                                                    Collections.unmodifiableList(data.get(s).stream()
+                                                            .filter((FormValue v) -> v.isFile() == false)
+                                                            .map((FormValue fv) -> fv.getValue()).collect(Collectors.toList()))));
+                        } catch (IOException e) {}
+                    } else {
+                        queryParameters.forEach((name, values) -> parameters.put(name, Collections.unmodifiableList(new ArrayList<String>(values))));
+                    }
+                    requestParameters = Collections.unmodifiableMap(parameters);
+                }
+            }
+        }
+
+        return requestParameters;
     }
 
     @Override
