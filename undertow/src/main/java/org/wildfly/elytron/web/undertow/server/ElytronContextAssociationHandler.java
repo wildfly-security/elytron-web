@@ -19,15 +19,11 @@ package org.wildfly.elytron.web.undertow.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
-import org.wildfly.security.http.Scope;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.handlers.AbstractSecurityContextAssociationHandler;
@@ -42,18 +38,15 @@ import io.undertow.server.HttpServerExchange;
 public class ElytronContextAssociationHandler extends AbstractSecurityContextAssociationHandler {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
-    private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
-    private final ScopeSessionListener scopeSessionListener;
+    private final Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier;
 
     /**
      * @param next
      */
     private ElytronContextAssociationHandler(Builder builder) {
         super(checkNotNullParam("next", builder.next));
-
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
-        this.scopeResolvers = builder.scopeResolvers;
-        this.scopeSessionListener = builder.scopeSessionListener;
+        this.httpExchangeSupplier = checkNotNullParam("httpExchangeSupplier", builder.httpExchangeSupplier);
     }
 
     /**
@@ -64,7 +57,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         return SecurityContextImpl.builder()
                 .setExchange(exchange)
                 .setMechanismSupplier(mechanismSupplier)
-                .setScopeResolvers(scopeResolvers)
+                .setHttpExchangeSupplier(this.httpExchangeSupplier.apply(exchange))
                 .build();
     }
 
@@ -76,8 +69,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
 
         HttpHandler next;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
-        final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers = new HashMap<>();
-        ScopeSessionListener scopeSessionListener;
+        Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
 
         private Builder() {
         }
@@ -94,14 +86,8 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
             return this;
         }
 
-        public Builder addScopeResolver(Scope scope, Function<HttpServerExchange, HttpScope> scopeResolver) {
-            scopeResolvers.put(scope, scopeResolver);
-
-            return this;
-        }
-
-        public Builder setScopeSessionListener(ScopeSessionListener scopeSessionListener) {
-            this.scopeSessionListener = scopeSessionListener;
+        public Builder setHttpExchangeSupplier(Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier) {
+            this.httpExchangeSupplier = httpExchangeSupplier;
 
             return this;
         }

@@ -67,7 +67,7 @@ import io.undertow.util.HttpString;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class ElytronHttpExchange implements HttpExchangeSpi {
+public class ElytronHttpExchange implements HttpExchangeSpi {
 
     private static final AttachmentKey<HttpScope> HTTP_SCOPE_ATTACHMENT_KEY = AttachmentKey.create(HttpScope.class);
 
@@ -78,12 +78,16 @@ class ElytronHttpExchange implements HttpExchangeSpi {
 
     private Map<String, List<String>> requestParameters;
 
-    ElytronHttpExchange(final HttpServerExchange httpServerExchange,
+    protected ElytronHttpExchange(final HttpServerExchange httpServerExchange,
             final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers,
             final ScopeSessionListener scopeSessionListener) {
         this.httpServerExchange = checkNotNullParam("httpServerExchange", httpServerExchange);
         this.scopeResolvers = scopeResolvers;
         this.scopeSessionListener = scopeSessionListener;
+    }
+
+    protected ElytronHttpExchange(final HttpServerExchange httpServerExchange) {
+        this(httpServerExchange, Collections.emptyMap(), null);
     }
 
     /**
@@ -100,14 +104,6 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     @Override
     public void addResponseHeader(String headerName, String headerValue) {
         httpServerExchange.getResponseHeaders().add(new HttpString(headerName), headerValue);
-    }
-
-    /**
-     * @see org.wildfly.security.http.HttpExchangeSpi#setStatusCode(int)
-     */
-    @Override
-    public void setStatusCode(int statusCode) {
-        httpServerExchange.setStatusCode(statusCode);
     }
 
     /**
@@ -307,8 +303,8 @@ class ElytronHttpExchange implements HttpExchangeSpi {
             case GLOBAL:
                 return null;
             case SESSION:
-                SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
-                SessionConfig sessionConfig = httpServerExchange.getAttachment(SessionConfig.ATTACHMENT_KEY);
+                SessionManager sessionManager = getSessionManager();
+                SessionConfig sessionConfig = getSessionConfig();
                 Session session = sessionManager.getSession(httpServerExchange, sessionConfig);
                 if (session == null) {
                     session = sessionManager.createSession(httpServerExchange, sessionConfig);
@@ -324,7 +320,7 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     @Override
     public Collection<String> getScopeIds(Scope scope) {
         if (scope == Scope.SESSION) {
-            SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
+            SessionManager sessionManager = getSessionManager();
             return sessionManager.getAllSessions();
         }
 
@@ -334,13 +330,36 @@ class ElytronHttpExchange implements HttpExchangeSpi {
     @Override
     public HttpScope getScope(Scope scope, String id) {
         if (scope == Scope.SESSION) {
-            SessionManager sessionManager = httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
+            SessionManager sessionManager = getSessionManager();
             Session session = sessionManager.getSession(id);
             if (session != null) {
                 return toScope(session);
             }
         }
         return null;
+    }
+
+    @Override
+    public void setStatusCode(int statusCode) {
+        httpServerExchange.setStatusCode(statusCode);
+    }
+
+    /**
+     * Sub-types may override this method to define how {@link SessionManager} is obtained.
+     *
+     * @return the {@link SessionManager}
+     */
+    protected  SessionManager getSessionManager() {
+        return httpServerExchange.getAttachment(SessionManager.ATTACHMENT_KEY);
+    }
+
+    /**
+     * Sub-types may override this method to define how {@link SessionConfig} is obtained.
+     *
+     * @return the {@link SessionConfig}
+     */
+    protected SessionConfig getSessionConfig() {
+        return httpServerExchange.getAttachment(SessionConfig.ATTACHMENT_KEY);
     }
 
     private HttpScope toScope(final Session session) {

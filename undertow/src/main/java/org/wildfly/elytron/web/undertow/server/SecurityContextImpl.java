@@ -21,15 +21,11 @@ import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
-import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
-import org.wildfly.security.http.Scope;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
@@ -45,14 +41,12 @@ import io.undertow.server.HttpServerExchange;
 public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
-    private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
-    private final ScopeSessionListener scopeSessionListener;
+    private ElytronHttpExchange httpExchange;
 
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
-        this.scopeResolvers = builder.scopeResolvers;
-        this.scopeSessionListener = builder.scopeSessionListener;
+        this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
     }
 
     /**
@@ -62,7 +56,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     public boolean authenticate() {
         HttpAuthenticator authenticator = HttpAuthenticator.builder()
                 .setMechanismSupplier(mechanismSupplier)
-                .setHttpExchangeSpi(new ElytronHttpExchange(exchange, scopeResolvers, scopeSessionListener))
+                .setHttpExchangeSpi(this.httpExchange)
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
                 .build();
@@ -116,8 +110,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
         HttpServerExchange exchange;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
-        Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
-        ScopeSessionListener scopeSessionListener;
+        ElytronHttpExchange httpExchange;
 
         private Builder() {
         }
@@ -134,14 +127,8 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return this;
         }
 
-        Builder setScopeResolvers(Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers) {
-            this.scopeResolvers = scopeResolvers;
-
-            return this;
-        }
-
-        Builder setScopeSessionListener(ScopeSessionListener scopeSessionListener) {
-            this.scopeSessionListener = scopeSessionListener;
+        Builder setHttpExchangeSupplier(ElytronHttpExchange httpExchange) {
+            this.httpExchange = httpExchange;
 
             return this;
         }
