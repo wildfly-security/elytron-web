@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -150,22 +152,20 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
     }
 
     @Override
-    public String getRequestURI() {
-        StringBuilder uriBuilder = new StringBuilder();
+    public URI getRequestURI() {
+        String scheme = httpServerExchange.getRequestScheme();
+        String host = httpServerExchange.getHostName();
+        int port = httpServerExchange.getHostPort();
+        String path = httpServerExchange.getRelativePath();
+        String query = httpServerExchange.getQueryString();
 
-        if (!httpServerExchange.isHostIncludedInRequestURI()) {
-            uriBuilder.append(httpServerExchange.getRequestScheme()).append("://").append(httpServerExchange.getHostAndPort());
+        try {
+            return new URI(scheme, null, host,
+                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port,
+                            path, query, null);
+        } catch (URISyntaxException e) {
+            return null;
         }
-
-        uriBuilder.append(httpServerExchange.getRequestURI());
-
-        String queryString = httpServerExchange.getQueryString();
-
-        if (queryString != null && !"".equals(queryString.trim())) {
-            uriBuilder.append("?").append(queryString);
-        }
-
-        return uriBuilder.toString();
     }
 
     @Override
