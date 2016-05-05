@@ -51,6 +51,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
@@ -61,6 +62,7 @@ import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
+import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.security.x500.X500AttributePrincipalDecoder;
 import org.xnio.OptionMap;
@@ -100,6 +102,7 @@ public class ClientCertAuthenticationTest {
                 .setDefaultRealmName("KeystoreRealm")
                 .setPrincipalDecoder(PrincipalDecoder.aggregate(new X500AttributePrincipalDecoder("2.5.4.3", 1), PrincipalDecoder.DEFAULT))
                 .setPreRealmRewriter(s -> s.toLowerCase())
+                .setPermissionMapper((principal, roles) -> PermissionVerifier.from(new LoginPermission()))
                 .build();
 
         HttpServerAuthenticationMechanismFactory factory = new ServerMechanismFactoryImpl();

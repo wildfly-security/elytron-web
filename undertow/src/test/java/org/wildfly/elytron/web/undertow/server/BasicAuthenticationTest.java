@@ -53,6 +53,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.realm.SimpleRealmEntry;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
@@ -66,6 +67,7 @@ import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
+import org.wildfly.security.permission.PermissionVerifier;
 
 /**
  * Test case to test HTTP BASIC authentication where authentication is backed by Elytron.
@@ -91,6 +93,7 @@ public class BasicAuthenticationTest extends TestBase {
                 .setDefaultRealmName("TestRealm");
 
         builder.addRealm("TestRealm", simpleRealm).build();
+        builder.setPermissionMapper((principal, roles) -> PermissionVerifier.from(new LoginPermission()));
         SecurityDomain securityDomain = builder.build();
 
         HttpServerAuthenticationMechanismFactory factory = new ServerMechanismFactoryImpl();
