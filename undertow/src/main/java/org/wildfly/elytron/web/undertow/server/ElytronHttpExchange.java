@@ -341,7 +341,9 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
 
     @Override
     public void setStatusCode(int statusCode) {
-        httpServerExchange.setStatusCode(statusCode);
+        if (httpServerExchange.isResponseStarted() == false) {
+            httpServerExchange.setStatusCode(statusCode);
+        }
     }
 
     /**
