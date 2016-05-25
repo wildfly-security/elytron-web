@@ -156,7 +156,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         String scheme = httpServerExchange.getRequestScheme();
         String host = httpServerExchange.getHostName();
         int port = httpServerExchange.getHostPort();
-        String path = httpServerExchange.getRelativePath();
+        String path = httpServerExchange.getRequestPath();
         String query = httpServerExchange.getQueryString();
 
         try {
