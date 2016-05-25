@@ -71,6 +71,10 @@ public class ScopeSessionListener implements SessionListener {
     @Override
     public synchronized void sessionDestroyed(final Session session, final HttpServerExchange exchange, SessionDestroyedReason reason) {
         List<Consumer<HttpServerScopes>> consumersForSession = registeredListeners.remove(session.getId());
+        if (consumersForSession == null) {
+            return;
+        }
+
         HttpServerScopes scopes = new HttpServerScopes() {
 
             @Override
