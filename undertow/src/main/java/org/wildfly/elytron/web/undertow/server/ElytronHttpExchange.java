@@ -284,7 +284,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
 
     @Override
     public OutputStream getResponseOutputStream() {
-        return null;
+        return httpServerExchange.getOutputStream();
     }
 
     @Override
