@@ -58,6 +58,7 @@ import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.realm.SimpleRealmEntry;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.credential.PasswordCredential;
@@ -65,6 +66,7 @@ import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
+import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.permission.PermissionVerifier;
@@ -96,14 +98,13 @@ public class BasicAuthenticationTest extends TestBase {
         builder.setPermissionMapper((principal, roles) -> PermissionVerifier.from(new LoginPermission()));
         SecurityDomain securityDomain = builder.build();
 
-        HttpServerAuthenticationMechanismFactory factory = new ServerMechanismFactoryImpl();
+        HttpServerAuthenticationMechanismFactory factory = new FilterServerMechanismFactory(new ServerMechanismFactoryImpl(), true, "BASIC");
         httpAuthenticationFactory = HttpAuthenticationFactory.builder()
             .setSecurityDomain(securityDomain)
-            .addMechanism("BASIC",
+            .setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(
                     MechanismConfiguration.builder()
                         .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName("Elytron Realm").build())
-                        .build()
-                    )
+                        .build()))
             .setFactory(factory)
             .build();
     }

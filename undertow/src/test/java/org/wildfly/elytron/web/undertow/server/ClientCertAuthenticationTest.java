@@ -55,6 +55,7 @@ import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
@@ -108,10 +109,9 @@ public class ClientCertAuthenticationTest {
         HttpServerAuthenticationMechanismFactory factory = new ServerMechanismFactoryImpl();
         httpAuthenticationFactory = HttpAuthenticationFactory.builder()
             .setSecurityDomain(securityDomain)
-            .addMechanism("CLIENT_CERT",
+            .setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(
                     MechanismConfiguration.builder()
-                        .build()
-                    )
+                    .build()))
             .setFactory(factory)
             .build();
     }
