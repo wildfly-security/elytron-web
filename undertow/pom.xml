@@ -36,7 +36,7 @@
     <description>Integration project for integrating Elytron based HTTP authentication with Undertow.</description>
 
     <properties>
-        <version.io.undertow>1.4.0.Beta1-Elytron2</version.io.undertow>
+        <version.io.undertow>1.4.0.Beta1-Elytron3</version.io.undertow>
     </properties>
 
     <dependencies>
