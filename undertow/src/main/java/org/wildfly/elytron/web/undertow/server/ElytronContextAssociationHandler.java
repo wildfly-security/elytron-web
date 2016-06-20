@@ -21,9 +21,9 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
+import org.wildfly.security.http.HttpServerRequest;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.handlers.AbstractSecurityContextAssociationHandler;
@@ -37,7 +37,7 @@ import io.undertow.server.HttpServerExchange;
  */
 public class ElytronContextAssociationHandler extends AbstractSecurityContextAssociationHandler {
 
-    private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+    private final Function<HttpServerRequest, List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier;
 
     /**
@@ -68,7 +68,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     public static class Builder {
 
         HttpHandler next;
-        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+        Function<HttpServerRequest, List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
 
         private Builder() {
@@ -80,7 +80,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
             return this;
         }
 
-        public Builder setMechanismSupplier(Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
+        public Builder setMechanismSupplier(Function<HttpServerRequest, List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
             this.mechanismSupplier = mechanismSupplier;
 
             return this;
