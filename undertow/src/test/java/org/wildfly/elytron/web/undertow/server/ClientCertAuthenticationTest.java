@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.elytron.web.undertow.server.DefaultServer.getAcceptListener;
 import static org.wildfly.elytron.web.undertow.server.DefaultServer.getXnioWorker;
+import static org.wildfly.security.auth.server.HttpAuthenticationFactory.getHostName;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -56,12 +57,14 @@ import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismConfigurationSelector;
+import org.wildfly.security.auth.server.MechanismInformation;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
+import org.wildfly.security.http.HttpServerRequest;
 import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.ssl.SSLContextBuilder;
@@ -223,7 +226,7 @@ public class ClientCertAuthenticationTest {
         nextHandler = new AuthenticationConstraintHandler(nextHandler);
         nextHandler = ElytronContextAssociationHandler.builder()
                         .setNext(nextHandler)
-                        .setMechanismSupplier(ClientCertAuthenticationTest::getAuthenticationMechanisms)
+                        .setMechanismSupplier(httpServerRequest -> getAuthenticationMechanisms(httpServerRequest))
                         .build();
 
         DefaultServer.setTestHandler(nextHandler);
@@ -288,11 +291,46 @@ public class ClientCertAuthenticationTest {
         }
     }
 
-    private static List<HttpServerAuthenticationMechanism> getAuthenticationMechanisms() {
+    private static List<HttpServerAuthenticationMechanism> getAuthenticationMechanisms(final HttpServerRequest httpServerRequest) {
+        final String hostName = getHostName(httpServerRequest);
+        final String protocol = httpServerRequest.getRequestURI().getScheme();
         return httpAuthenticationFactory.getMechanismNames().stream()
-            .map(ClientCertAuthenticationTest::createMechanism)
-            .filter(m -> m != null)
-            .collect(Collectors.toList());
+                .map(s -> {
+                    try {
+                        // Now that we have the host name and protocol name, make sure the mechanism is actually available
+                        MechanismInformation mechanismInformation = new MechanismInformation() {
+
+                            @Override
+                            public String getProtocol() {
+                                return protocol;
+                            }
+
+                            @Override
+                            public String getMechanismType() {
+                                return "HTTP";
+                            }
+
+                            @Override
+                            public String getMechanismName() {
+                                return s;
+                            }
+
+                            @Override
+                            public String getHostName() {
+                                return hostName;
+                            }
+                        };
+                        if (httpAuthenticationFactory.isMechAvailable(mechanismInformation)) {
+                            return createMechanism(s);
+                        } else {
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
+                .filter(m -> m != null)
+                .collect(Collectors.toList());
     }
 
 }

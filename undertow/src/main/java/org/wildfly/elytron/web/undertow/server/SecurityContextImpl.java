@@ -21,11 +21,12 @@ import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
+import org.wildfly.security.http.HttpServerRequest;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
@@ -40,7 +41,7 @@ import io.undertow.server.HttpServerExchange;
  */
 public class SecurityContextImpl extends AbstractSecurityContext {
 
-    private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+    private final Function<HttpServerRequest, List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private ElytronHttpExchange httpExchange;
 
     private SecurityContextImpl(Builder builder) {
@@ -109,7 +110,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     static class Builder {
 
         HttpServerExchange exchange;
-        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
+        Function<HttpServerRequest, List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         ElytronHttpExchange httpExchange;
 
         private Builder() {
@@ -121,7 +122,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return this;
         }
 
-        Builder setMechanismSupplier(Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
+        Builder setMechanismSupplier(Function<HttpServerRequest, List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
             this.mechanismSupplier = mechanismSupplier;
 
             return this;
