@@ -162,7 +162,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         try {
             return new URI(scheme, null, host,
                     ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port,
-                            path, query, null);
+                            path, query == null || "".equals(query) ? null : query, null);
         } catch (URISyntaxException e) {
             return null;
         }
