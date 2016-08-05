@@ -33,8 +33,6 @@ import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
-import org.xnio.BufferAllocator;
-import org.xnio.ByteBufferSlicePool;
 import org.xnio.ChannelListener;
 import org.xnio.ChannelListeners;
 import org.xnio.OptionMap;
@@ -44,6 +42,7 @@ import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
 
+import io.undertow.server.DefaultByteBufferPool;
 /**
  * Following a similar approach as is used in the Undertow testsuite, a runner that starts up an Undertow server for the first
  * test and keeps it up for re-use until the last test completes.
@@ -136,9 +135,9 @@ public class DefaultServer extends BlockJUnit4ClassRunner {
                 .set(Options.BALANCING_CONNECTIONS, 2)
                 .getMap();
 
-        ByteBufferSlicePool pool = new ByteBufferSlicePool(BufferAllocator.BYTE_BUFFER_ALLOCATOR, 8192, 8192 * 8192);
+        DefaultByteBufferPool pool = new DefaultByteBufferPool(true, 8192 * 3, 1000, 10, 100);
         openListener = new HttpOpenListener(pool, OptionMap.create(UndertowOptions.BUFFER_PIPELINED_DATA, true,
-                UndertowOptions.ENABLE_CONNECTOR_STATISTICS, true));
+                UndertowOptions.ENABLE_STATISTICS, true));
         acceptListener = ChannelListeners.openListenerAdapter(openListener);
 
         server = worker.createStreamConnectionServer(new InetSocketAddress("localhost", 7776), acceptListener, serverOptions);

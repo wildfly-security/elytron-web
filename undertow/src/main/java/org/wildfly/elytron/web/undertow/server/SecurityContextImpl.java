@@ -64,7 +64,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         try {
             return authenticator.authenticate();
         } catch (HttpAuthenticationException e) {
-            exchange.setResponseCode(INTERNAL_SERVER_ERROR);
+            exchange.setStatusCode(INTERNAL_SERVER_ERROR);
 
             return false;
         }
