@@ -132,7 +132,7 @@ public class ClientCertAuthenticationTest {
      * @return the initialised key manager.
      */
     private static X509ExtendedKeyManager getKeyManager(final String keystorePath) throws Exception {
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(loadKeyStore(keystorePath), "Elytron".toCharArray());
 
         for (KeyManager current : keyManagerFactory.getKeyManagers()) {
@@ -151,7 +151,7 @@ public class ClientCertAuthenticationTest {
      * @throws KeyStoreException
      */
     private static X509TrustManager getCATrustManager() throws Exception {
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(loadKeyStore("/tls/ca.truststore"));
 
         for (TrustManager current : trustManagerFactory.getTrustManagers()) {
