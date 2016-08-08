@@ -211,6 +211,7 @@ public class ClientCertAuthenticationTest {
                 .set(Options.REUSE_ADDRESSES, true)
                 .set(Options.BALANCING_TOKENS, 1)
                 .set(Options.BALANCING_CONNECTIONS, 2)
+                .set(Options.CLOSE_ABORT, true)
                 .getMap();
 
         /*
