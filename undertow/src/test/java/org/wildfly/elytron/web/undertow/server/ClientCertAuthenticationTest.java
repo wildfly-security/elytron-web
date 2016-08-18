@@ -223,6 +223,7 @@ public class ClientCertAuthenticationTest {
         nextHandler = new AuthenticationConstraintHandler(nextHandler);
         nextHandler = ElytronContextAssociationHandler.builder()
                         .setNext(nextHandler)
+                        .setSecurityDomain(httpAuthenticationFactory.getSecurityDomain())
                         .setMechanismSupplier(ClientCertAuthenticationTest::getAuthenticationMechanisms)
                         .build();
 

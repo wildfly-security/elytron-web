@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 
 import io.undertow.security.api.SecurityContext;
@@ -37,6 +38,8 @@ import io.undertow.server.HttpServerExchange;
  */
 public class ElytronContextAssociationHandler extends AbstractSecurityContextAssociationHandler {
 
+    private final String programaticMechanismName;
+    private final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier;
 
@@ -45,6 +48,8 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
      */
     private ElytronContextAssociationHandler(Builder builder) {
         super(checkNotNullParam("next", builder.next));
+        this.programaticMechanismName = builder.programaticMechanismName != null ? builder.programaticMechanismName : "Programatic";
+        this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchangeSupplier = checkNotNullParam("httpExchangeSupplier", builder.httpExchangeSupplier);
     }
@@ -56,6 +61,8 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     public SecurityContext createSecurityContext(HttpServerExchange exchange) {
         return SecurityContextImpl.builder()
                 .setExchange(exchange)
+                .setProgramaticMechanismName(programaticMechanismName)
+                .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(mechanismSupplier)
                 .setHttpExchangeSupplier(this.httpExchangeSupplier.apply(exchange))
                 .build();
@@ -68,6 +75,8 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     public static class Builder {
 
         HttpHandler next;
+        String programaticMechanismName;
+        SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
 
@@ -76,6 +85,18 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
 
         public Builder setNext(HttpHandler next) {
             this.next = next;
+
+            return this;
+        }
+
+        public Builder setProgramaticMechanismName(final String programaticMechanismName) {
+            this.programaticMechanismName = programaticMechanismName;
+
+            return this;
+        }
+
+        public Builder setSecurityDomain(final SecurityDomain securityDomain) {
+            this.securityDomain = securityDomain;
 
             return this;
         }

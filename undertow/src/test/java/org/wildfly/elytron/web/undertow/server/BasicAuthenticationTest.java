@@ -141,6 +141,7 @@ public class BasicAuthenticationTest extends TestBase {
         nextHandler = new AuthenticationConstraintHandler(nextHandler);
         nextHandler = ElytronContextAssociationHandler.builder()
                         .setNext(nextHandler)
+                        .setSecurityDomain(httpAuthenticationFactory.getSecurityDomain())
                         .setMechanismSupplier(BasicAuthenticationTest::getAuthenticationMechanisms)
                         .build();
 
