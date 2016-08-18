@@ -138,7 +138,7 @@ public class DefaultServer extends BlockJUnit4ClassRunner {
 
         ByteBufferSlicePool pool = new ByteBufferSlicePool(BufferAllocator.BYTE_BUFFER_ALLOCATOR, 8192, 8192 * 8192);
         openListener = new HttpOpenListener(pool, OptionMap.create(UndertowOptions.BUFFER_PIPELINED_DATA, true,
-                UndertowOptions.ENABLE_CONNECTOR_STATISTICS, true));
+                UndertowOptions.ENABLE_STATISTICS, true));
         acceptListener = ChannelListeners.openListenerAdapter(openListener);
 
         server = worker.createStreamConnectionServer(new InetSocketAddress("localhost", 7776), acceptListener, serverOptions);
