@@ -153,16 +153,27 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
 
     @Override
     public URI getRequestURI() {
-        String scheme = httpServerExchange.getRequestScheme();
-        String host = httpServerExchange.getHostName();
-        int port = httpServerExchange.getHostPort();
-        String path = httpServerExchange.getRequestPath();
-        String query = httpServerExchange.getQueryString();
-
+        final String scheme;
+        final String host;
+        final int port;
+        final String path;
+        final String query = httpServerExchange.getQueryString();
         try {
+            if (httpServerExchange.isHostIncludedInRequestURI()) {
+                URI tempUri = new URI(httpServerExchange.getRequestURI());
+                scheme = tempUri.getScheme();
+                host = tempUri.getHost();
+                port = tempUri.getPort();
+                path = tempUri.getPath();
+            } else {
+                scheme = httpServerExchange.getRequestScheme();
+                host = httpServerExchange.getHostName();
+                port = httpServerExchange.getHostPort();
+                path = httpServerExchange.getRequestURI();
+            }
             return new URI(scheme, null, host,
-                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port,
-                            path, query == null || "".equals(query) ? null : query, null);
+                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port, path,
+                    query == null || "".equals(query) ? null : query, null);
         } catch (URISyntaxException e) {
             return null;
         }
