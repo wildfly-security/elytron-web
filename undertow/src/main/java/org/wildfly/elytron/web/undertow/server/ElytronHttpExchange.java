@@ -43,8 +43,8 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpExchangeSpi;
 import org.wildfly.security.http.HttpScope;
+import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.HttpServerCookie;
-import org.wildfly.security.http.HttpServerScopes;
 import org.wildfly.security.http.Scope;
 
 import io.undertow.security.api.SecurityContext;
@@ -314,17 +314,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
             case GLOBAL:
                 return null;
             case SESSION:
-                SessionManager sessionManager = getSessionManager();
-                SessionConfig sessionConfig = getSessionConfig();
-                if (sessionManager != null && sessionConfig != null) {
-                    Session session = sessionManager.getSession(httpServerExchange, sessionConfig);
-                    if (session == null) {
-                        session = sessionManager.createSession(httpServerExchange, sessionConfig);
-                    }
-
-                    return toScope(session);
-                }
-                break;
+                return toScope(null);
             case SSL_SESSION:
                 return getScope(getSSLSession());
         }
@@ -344,11 +334,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
     @Override
     public HttpScope getScope(Scope scope, String id) {
         if (scope == Scope.SESSION) {
-            SessionManager sessionManager = getSessionManager();
-            Session session = sessionManager.getSession(id);
-            if (session != null) {
-                return toScope(session);
-            }
+            return toScope(id);
         }
         return null;
     }
@@ -378,8 +364,27 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         return httpServerExchange.getAttachment(SessionConfig.ATTACHMENT_KEY);
     }
 
-    private HttpScope toScope(final Session session) {
+    private HttpScope toScope(String id) {
+        SessionManager sessionManager = getSessionManager();
+        SessionConfig sessionConfig = getSessionConfig();
+
+        if (sessionManager == null && sessionConfig == null) {
+            return new HttpScope() {
+                @Override
+                public boolean exists() {
+                    return false;
+                }
+
+                @Override
+                public boolean create() {
+                    return false;
+                }
+            };
+        }
+
         return new HttpScope() {
+
+            private Session session = id == null ? sessionManager.getSession(httpServerExchange, sessionConfig) : sessionManager.getSession(id);
 
             @Override
             public String getID() {
@@ -387,45 +392,64 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
             }
 
             @Override
+            public boolean exists() {
+                return session != null;
+            }
+
+            @Override
+            public boolean create() {
+                if (exists()) {
+                    return false;
+                }
+                session = sessionManager.createSession(httpServerExchange, sessionConfig);
+                return session != null;
+            }
+
+            @Override
             public boolean supportsAttachments() {
-                return true;
+                return exists();
             }
 
             @Override
             public void setAttachment(String key, Object value) {
-                session.setAttribute(key, value);
+                if (supportsAttachments()) {
+                    session.setAttribute(key, value);
+                }
             }
 
             @Override
             public Object getAttachment(String key) {
-                return session.getAttribute(key);
+                if (supportsAttachments()) {
+                    return session.getAttribute(key);
+                }
+                return null;
             }
 
             @Override
             public boolean supportsInvalidation() {
-                return true;
+                return exists();
             }
 
             @Override
             public boolean invalidate() {
-                session.invalidate(httpServerExchange);
-                return true;
+                if (supportsInvalidation()) {
+                    session.invalidate(httpServerExchange);
+                    return true;
+                }
+                return false;
             }
 
             @Override
             public boolean supportsNotifications() {
-                return scopeSessionListener != null;
+                return exists() && scopeSessionListener != null;
             }
 
             @Override
-            public void registerForNotification(Consumer<HttpServerScopes> notificationConsumer) {
-                if (scopeSessionListener != null) {
+            public void registerForNotification(Consumer<HttpScopeNotification> notificationConsumer) {
+                if (supportsNotifications()) {
                     scopeSessionListener.registerListener(session, notificationConsumer);
                 }
             }
-
-
-
         };
     }
 
@@ -437,6 +461,16 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                 if (httpScope == null) {
                     final Map<String, Object> storageMap = new HashMap<>();
                     httpScope = new HttpScope() {
+
+                        @Override
+                        public boolean exists() {
+                            return true;
+                        }
+
+                        @Override
+                        public boolean create() {
+                            return false;
+                        }
 
                         @Override
                         public boolean supportsAttachments() {
@@ -473,6 +507,16 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         }
 
         return new HttpScope() {
+
+            @Override
+            public boolean exists() {
+                return true;
+            }
+
+            @Override
+            public boolean create() {
+                return false;
+            }
 
             @Override
             public boolean supportsAttachments() {

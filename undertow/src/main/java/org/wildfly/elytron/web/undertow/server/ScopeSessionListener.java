@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.wildfly.security.http.HttpScope;
-import org.wildfly.security.http.HttpServerScopes;
+import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.Scope;
 
 import io.undertow.server.HttpServerExchange;
@@ -42,15 +42,15 @@ import io.undertow.server.session.SessionListener;
 public class ScopeSessionListener implements SessionListener {
 
     private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
-    private final Map<String, List<Consumer<HttpServerScopes>>> registeredListeners = new HashMap<>();
+    private final Map<String, List<Consumer<HttpScopeNotification>>> registeredListeners = new HashMap<>();
 
     private ScopeSessionListener(Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers) {
         this.scopeResolvers = scopeResolvers;
     }
 
-    synchronized void registerListener(Session session, Consumer<HttpServerScopes> notificationConsumer) {
+    synchronized void registerListener(Session session, Consumer<HttpScopeNotification> notificationConsumer) {
         String id = session.getId();
-        List<Consumer<HttpServerScopes>> consumersForSession;
+        List<Consumer<HttpScopeNotification>> consumersForSession;
         if (registeredListeners.containsKey(id)) {
             consumersForSession = registeredListeners.get(id);
         } else {
@@ -63,28 +63,33 @@ public class ScopeSessionListener implements SessionListener {
     @Override
     public synchronized void sessionIdChanged(Session session, String oldSessionId) {
         if (registeredListeners.containsKey(oldSessionId)) {
-            List<Consumer<HttpServerScopes>> consumersForSession = registeredListeners.remove(oldSessionId);
+            List<Consumer<HttpScopeNotification>> consumersForSession = registeredListeners.remove(oldSessionId);
             registeredListeners.put(session.getId(), consumersForSession);
         }
     }
 
     @Override
     public synchronized void sessionDestroyed(final Session session, final HttpServerExchange exchange, SessionDestroyedReason reason) {
-        List<Consumer<HttpServerScopes>> consumersForSession = registeredListeners.remove(session.getId());
+        List<Consumer<HttpScopeNotification>> consumersForSession = registeredListeners.remove(session.getId());
         if (consumersForSession == null) {
             return;
         }
 
-        HttpServerScopes scopes = new HttpServerScopes() {
-
+        consumersForSession.forEach((Consumer<HttpScopeNotification> c) -> c.accept(new HttpScopeNotification() {
             @Override
-            public Collection<String> getScopeIds(Scope scope) {
-                return null;
-            }
-
-            @Override
-            public HttpScope getScope(Scope scope, String id) {
-                return null;
+            public boolean isOfType(Enum... notification) {
+                for (Enum type : notification) {
+                    if (SessionNotificationType.INVALIDATED.equals(type) && SessionDestroyedReason.INVALIDATED.equals(reason)) {
+                        return true;
+                    }
+                    if (SessionNotificationType.TIMEOUT.equals(type) && SessionDestroyedReason.TIMEOUT.equals(reason)) {
+                        return true;
+                    }
+                    if (SessionNotificationType.UNDEPLOY.equals(type) && SessionDestroyedReason.UNDEPLOY.equals(reason)) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             @Override
@@ -97,8 +102,23 @@ public class ScopeSessionListener implements SessionListener {
                     return new HttpScope() {
 
                         @Override
+                        public boolean exists() {
+                            return true;
+                        }
+
+                        @Override
+                        public boolean create() {
+                            return false;
+                        }
+
+                        @Override
                         public boolean supportsAttachments() {
                             return true;
+                        }
+
+                        @Override
+                        public boolean supportsInvalidation() {
+                            return false;
                         }
 
                         @Override
@@ -116,9 +136,17 @@ public class ScopeSessionListener implements SessionListener {
 
                 return null;
             }
-        };
 
-        consumersForSession.forEach((Consumer<HttpServerScopes> c) -> c.accept(scopes));
+            @Override
+            public Collection<String> getScopeIds(Scope scope) {
+                return null;
+            }
+
+            @Override
+            public HttpScope getScope(Scope scope, String id) {
+                return null;
+            }
+        }));
     }
 
     public static Builder builder() {
