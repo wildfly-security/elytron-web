@@ -6,4 +6,6 @@ All keystores and entries share the same password 'Elytron'.
 
 ca.truststore - Contains the self signed certificate of the certificate authority.
 scarab.keystore - Contains an alias 'scarab'
-ladybird.keystore - Contains and alias 'ladybird' 
+ladybird.keystore - Contains and alias 'ladybird'
+
+The keystore 'tiger.keystore' can be used in tests where only beetles are valid.

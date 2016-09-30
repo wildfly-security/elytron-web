@@ -96,7 +96,11 @@
             <artifactId>jboss-modules</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-embedded</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

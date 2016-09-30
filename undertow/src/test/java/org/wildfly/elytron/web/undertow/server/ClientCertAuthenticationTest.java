@@ -17,21 +17,27 @@
  */
 package org.wildfly.elytron.web.undertow.server;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.wildfly.elytron.web.undertow.server.DefaultServer.getAcceptListener;
-import static org.wildfly.elytron.web.undertow.server.DefaultServer.getXnioWorker;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
+import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
+import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.server.PrincipalDecoder;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.auth.server.SupportLevel;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
+import org.wildfly.security.permission.PermissionVerifier;
+import org.wildfly.security.ssl.SSLContextBuilder;
+import org.wildfly.security.x500.X500AttributePrincipalDecoder;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -41,42 +47,13 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.InputStream;
+import java.net.URI;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.wildfly.security.auth.permission.LoginPermission;
-import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
-import org.wildfly.security.auth.server.MechanismConfiguration;
-import org.wildfly.security.auth.server.MechanismConfigurationSelector;
-import org.wildfly.security.auth.server.PrincipalDecoder;
-import org.wildfly.security.auth.server.SecurityDomain;
-import org.wildfly.security.auth.server.SecurityRealm;
-import org.wildfly.security.http.HttpAuthenticationException;
-import org.wildfly.security.http.HttpServerAuthenticationMechanism;
-import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
-import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
-import org.wildfly.security.permission.PermissionVerifier;
-import org.wildfly.security.ssl.SSLContextBuilder;
-import org.wildfly.security.x500.X500AttributePrincipalDecoder;
-import org.xnio.OptionMap;
-import org.xnio.Options;
-import org.xnio.StreamConnection;
-import org.xnio.channels.AcceptingChannel;
-
-import io.undertow.protocols.ssl.UndertowXnioSsl;
-import io.undertow.security.handlers.AuthenticationCallHandler;
-import io.undertow.security.handlers.AuthenticationConstraintHandler;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.handlers.BlockingHandler;
-import io.undertow.util.StatusCodes;
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -84,45 +61,136 @@ import io.undertow.util.StatusCodes;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-@RunWith(DefaultServer.class)
-public class ClientCertAuthenticationTest {
+public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTest {
 
-    private static SSLContext clientContext;
+    private SecurityRealm securityRealm;
 
-    private static SecurityDomain securityDomain;
+    @Rule
+    public UndertowServer serverConfigurationA = new UndertowServer(createRootHttpHandler(), () -> {
+        try {
+            return new SSLContextBuilder()
+                    .setSecurityDomain(getSecurityDomain())
+                    .setKeyManager(getKeyManager("/tls/scarab.keystore"))
+                    .setTrustManager(getCATrustManager())
+                    .build().create();
+        } catch (Exception cause) {
+            throw new RuntimeException("Could not create server ssl context.", cause);
+        }
+    });
 
-    private static HttpAuthenticationFactory httpAuthenticationFactory;
+    @Rule
+    public UndertowServer serverConfigurationB = new UndertowServer(createRootHttpHandler(), 7777, () -> {
+        try {
+            return new SSLContextBuilder()
+                .setKeyManager(getKeyManager("/tls/scarab.keystore"))
+                .setTrustManager(getCATrustManager())
+                .setWantClientAuth(true)
+                .build().create();
+        } catch (Exception cause) {
+            throw new RuntimeException("Could not create server ssl context.", cause);
+        }
+    });
 
-    @BeforeClass
-    public static void setupHttpAuthenticationFactory() throws Exception {
-        SecurityRealm securityRealm = new KeyStoreBackedSecurityRealm(loadKeyStore("/tls/beetles.keystore"));
+    private AtomicInteger realmIdentityInvocationCount = new AtomicInteger(0);
 
-        securityDomain = SecurityDomain.builder()
+    @Test
+    public void testSuccessfulAuthentication() throws Exception {
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setSSLContext(createRecognizedSSLContext())
+                .setSSLHostnameVerifier((String h, SSLSession s) -> true)
+                .build();
+
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))), "ladybird");
+    }
+
+    @Test
+    public void testClientCertAfterSession() throws Exception {
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setSSLContext(createRecognizedSSLContext())
+                .setSSLHostnameVerifier((String h, SSLSession s) -> true)
+                .build();
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7777, null, null, null))), "ladybird");
+    }
+
+    @Test
+    public void testSSLSessionIdentityCacheHit() throws Exception {
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setSSLContext(createRecognizedSSLContext())
+                .setSSLHostnameVerifier((String h, SSLSession s) -> true)
+                .build();
+
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))), "ladybird");
+
+        for (int i = 0; i < 10; i++) {
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))), "ladybird");
+        }
+
+        // two hits during the first interaction, after that we should expect no more hits to the realm
+        assertEquals(2, this.realmIdentityInvocationCount.get());
+    }
+
+    @Test
+    public void testFailedAuthentication() throws Exception {
+        HttpClient httpClient = HttpClientBuilder.create()
+                .setSSLContext(createUnrecognizedSSLContext())
+                .setSSLHostnameVerifier((String h, SSLSession s) -> true)
+                .build();
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))).getStatusLine().getStatusCode());
+    }
+
+    @Override
+    protected String getMechanismName() {
+        return "CLIENT_CERT";
+    }
+
+    @Override
+    protected SecurityDomain doCreateSecurityDomain() throws Exception {
+        KeyStoreBackedSecurityRealm delegate = new KeyStoreBackedSecurityRealm(loadKeyStore("/tls/beetles.keystore"));
+
+        this.securityRealm = new SecurityRealm() {
+            @Override
+            public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+                realmIdentityInvocationCount.incrementAndGet();
+                return delegate.getRealmIdentity(locator);
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+                return delegate.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
+                return delegate.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+        };
+
+        SecurityDomain.Builder builder = SecurityDomain.builder()
                 .addRealm("KeystoreRealm", securityRealm)
-                    .build()
+                .build()
                 .setDefaultRealmName("KeystoreRealm")
                 .setPrincipalDecoder(PrincipalDecoder.aggregate(new X500AttributePrincipalDecoder("2.5.4.3", 1), PrincipalDecoder.DEFAULT))
                 .setPreRealmRewriter(s -> s.toLowerCase())
-                .setPermissionMapper((principal, roles) -> PermissionVerifier.from(new LoginPermission()))
-                .build();
+                .setPermissionMapper((principal, roles) -> PermissionVerifier.from(new LoginPermission()));
 
-        HttpServerAuthenticationMechanismFactory factory = new ServerMechanismFactoryImpl();
-        httpAuthenticationFactory = HttpAuthenticationFactory.builder()
-            .setSecurityDomain(securityDomain)
-            .setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(
-                    MechanismConfiguration.builder()
-                    .build()))
-            .setFactory(factory)
-            .build();
+
+        return builder.build();
     }
 
-    @BeforeClass
-    public static void setupClient() throws Exception {
-        SSLContext clientContext = SSLContext.getInstance("TLS");
-        clientContext.init(new KeyManager[] { getKeyManager("/tls/ladybird.keystore") },
-                new TrustManager[] { getCATrustManager() }, null);
+    private SSLContext createRecognizedSSLContext() throws Exception {
+        SSLContext sslContext = SSLContext.getInstance("TLS");
 
-        ClientCertAuthenticationTest.clientContext = clientContext;
+        sslContext.init(new KeyManager[] {getKeyManager("/tls/ladybird.keystore")}, new TrustManager[] { getCATrustManager() }, null);
+
+        return sslContext;
+    }
+
+    private SSLContext createUnrecognizedSSLContext() throws Exception {
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+
+        sslContext.init(new KeyManager[] {getKeyManager("/tls/tiger.keystore")}, new TrustManager[] { getCATrustManager() }, null);
+
+        return sslContext;
     }
 
     /**
@@ -131,8 +199,8 @@ public class ClientCertAuthenticationTest {
      * @param keystoreName the name of the key store to load.
      * @return the initialised key manager.
      */
-    private static X509ExtendedKeyManager getKeyManager(final String keystorePath) throws Exception {
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    private X509ExtendedKeyManager getKeyManager(final String keystorePath) throws Exception {
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
         keyManagerFactory.init(loadKeyStore(keystorePath), "Elytron".toCharArray());
 
         for (KeyManager current : keyManagerFactory.getKeyManagers()) {
@@ -150,8 +218,8 @@ public class ClientCertAuthenticationTest {
      * @return the trust manager that trusts all certificates signed by the certificate authority.
      * @throws KeyStoreException
      */
-    private static X509TrustManager getCATrustManager() throws Exception {
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    private X509TrustManager getCATrustManager() throws Exception {
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
         trustManagerFactory.init(loadKeyStore("/tls/ca.truststore"));
 
         for (TrustManager current : trustManagerFactory.getTrustManagers()) {
@@ -163,7 +231,7 @@ public class ClientCertAuthenticationTest {
         throw new IllegalStateException("Unable to obtain X509TrustManager.");
     }
 
-    private static KeyStore loadKeyStore(final String path) throws Exception {
+    private KeyStore loadKeyStore(final String path) throws Exception {
         KeyStore keyStore = KeyStore.getInstance("jks");
         try (InputStream caTrustStoreFile = ClientCertAuthenticationTest.class.getResourceAsStream(path)) {
             keyStore.load(caTrustStoreFile, "Elytron".toCharArray());
@@ -171,130 +239,4 @@ public class ClientCertAuthenticationTest {
 
         return keyStore;
     }
-
-    // Test Mechanism Is Available
-    @Test
-    public void testClientCertAuthenticationAvailable() {
-        assertTrue("CLIENT_CERT Authentication Supported", httpAuthenticationFactory.getMechanismNames().contains("CLIENT_CERT"));
-    }
-
-    // Test authentication attached to SSLSession.
-    @Test
-    public void testClientCertFromSession() throws Exception {
-        performClientCertTest(new SSLContextBuilder()
-                .setSecurityDomain(securityDomain)
-                .setKeyManager(getKeyManager("/tls/scarab.keystore"))
-                .setTrustManager(getCATrustManager())
-                .build().create());
-    }
-
-    // Test authentication delayed until mechanism.
-
-    @Test
-    public void testClientCertAfterSession() throws Exception{
-        performClientCertTest(new SSLContextBuilder()
-                .setKeyManager(getKeyManager("/tls/scarab.keystore"))
-                .setTrustManager(getCATrustManager())
-                .setWantClientAuth(true)
-                .build().create());
-    }
-
-    /*
-     * Regardless of how the SSLContext is defined the end result should be the same, authentication during SSLSession
-     * establishment is just an optimisation.
-     */
-    private void performClientCertTest(final SSLContext serverContext) throws Exception {
-        UndertowXnioSsl ssl = new UndertowXnioSsl(getXnioWorker().getXnio(), OptionMap.EMPTY, serverContext);
-        OptionMap serverOptions = OptionMap.builder()
-                .set(Options.TCP_NODELAY, true)
-                .set(Options.BACKLOG, 1000)
-                .set(Options.REUSE_ADDRESSES, true)
-                .set(Options.BALANCING_TOKENS, 1)
-                .set(Options.BALANCING_CONNECTIONS, 2)
-                .set(Options.CLOSE_ABORT, true)
-                .getMap();
-
-        /*
-         * Full Chain Set Up
-         */
-        HttpHandler nextHandler = new ResponseHandler(httpAuthenticationFactory.getSecurityDomain());
-        nextHandler = new ElytronRunAsHandler(nextHandler);
-        nextHandler = new BlockingHandler(nextHandler);
-        nextHandler = new AuthenticationCallHandler(nextHandler);
-        nextHandler = new AuthenticationConstraintHandler(nextHandler);
-        nextHandler = ElytronContextAssociationHandler.builder()
-                        .setNext(nextHandler)
-                        .setSecurityDomain(httpAuthenticationFactory.getSecurityDomain())
-                        .setMechanismSupplier(ClientCertAuthenticationTest::getAuthenticationMechanisms)
-                        .build();
-
-        DefaultServer.setTestHandler(nextHandler);
-
-        AcceptingChannel<? extends StreamConnection> server = ssl.createSslConnectionServer(getXnioWorker(), new InetSocketAddress("localhost", 7777), getAcceptListener(), serverOptions);
-        try {
-            server.getAcceptSetter().set(getAcceptListener());
-            server.resumeAccepts();
-
-            HttpClient httpClient = HttpClientBuilder.create()
-                    .setSSLContext(clientContext)
-                    .setSSLHostnameVerifier((String h, SSLSession s) -> true)
-                    .build();
-            HttpGet get = new HttpGet(new URI("https", null, "localhost", 7777, null, null, null));
-            HttpResponse result = httpClient.execute(get);
-
-            assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
-
-            Header[] values = result.getHeaders("ProcessedBy");
-            assertEquals(1, values.length);
-            assertEquals("ResponseHandler", values[0].getValue());
-
-            values = result.getHeaders("UndertowUser");
-            assertEquals(1, values.length);
-            assertEquals("ladybird", values[0].getValue());
-
-            values = result.getHeaders("ElytronUser");
-            assertEquals(1, values.length);
-            assertEquals("ladybird", values[0].getValue());
-
-            readResponse(result);
-        } finally {
-            server.close();
-        }
-    }
-
-    public static String readResponse(final HttpResponse response) throws IOException {
-        HttpEntity entity = response.getEntity();
-        if (entity == null) {
-            return "";
-        }
-        return readResponse(entity.getContent());
-    }
-
-    public static String readResponse(InputStream stream) throws IOException {
-
-        byte[] data = new byte[100];
-        int read;
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        while ((read = stream.read(data)) != -1) {
-            out.write(data, 0, read);
-        }
-        return new String(out.toByteArray(), Charset.forName("UTF-8"));
-    }
-
-    private static HttpServerAuthenticationMechanism createMechanism(final String mechanismName) {
-        try {
-            return httpAuthenticationFactory.createMechanism(mechanismName);
-        } catch (HttpAuthenticationException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static List<HttpServerAuthenticationMechanism> getAuthenticationMechanisms() {
-        return httpAuthenticationFactory.getMechanismNames().stream()
-            .map(ClientCertAuthenticationTest::createMechanism)
-            .filter(m -> m != null)
-            .collect(Collectors.toList());
-    }
-
 }

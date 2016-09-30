@@ -46,6 +46,7 @@
         <version.org.jboss.modules>1.4.3.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.3.1.Final</version.org.jboss.xnio>
         <version.junit.junit>4.11</version.junit.junit>
+        <version.org.infinispan.infinispan-embedded>8.2.3.Final</version.org.infinispan.infinispan-embedded>
         <version.org.wildfly.checkstyle-config>1.0.3.Final</version.org.wildfly.checkstyle-config>
         <version.com.puppycrawl.tools.checkstyle>6.3</version.com.puppycrawl.tools.checkstyle>
 
@@ -92,6 +93,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.surefire.plugin}</version>
                     <configuration>
+                        <argLine>-server -Djava.net.preferIPv4Stack=true</argLine>
                         <systemPropertyVariables>
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <log4j.defaultInitOverride>true</log4j.defaultInitOverride>
@@ -241,7 +243,12 @@
                 <version>${version.org.jboss.xnio}</version>
                 <scope>test</scope>
             </dependency>
-
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-embedded</artifactId>
+                <version>${version.org.infinispan.infinispan-embedded}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

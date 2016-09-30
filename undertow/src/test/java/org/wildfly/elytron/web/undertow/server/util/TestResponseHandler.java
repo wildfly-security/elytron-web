@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wildfly.elytron.web.undertow.server;
+package org.wildfly.elytron.web.undertow.server.util;
 
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -33,11 +33,11 @@ import io.undertow.util.HttpString;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class ResponseHandler implements HttpHandler {
+public class TestResponseHandler implements HttpHandler {
 
     private final SecurityDomain securityDomain;
 
-    ResponseHandler(SecurityDomain securityDomain) {
+    public TestResponseHandler(SecurityDomain securityDomain) {
         this.securityDomain = securityDomain;
     }
 
