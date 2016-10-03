@@ -17,6 +17,22 @@
  */
 package org.wildfly.elytron.web.undertow.server;
 
+import static org.junit.Assert.assertEquals;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedKeyManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.InputStream;
+import java.net.URI;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -38,22 +54,6 @@ import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.security.x500.X500AttributePrincipalDecoder;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.InputStream;
-import java.net.URI;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.assertEquals;
 
 
 /**

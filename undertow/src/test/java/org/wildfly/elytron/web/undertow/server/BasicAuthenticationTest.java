@@ -1,7 +1,7 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2015 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * JBoss, Home of Professional Open Source
+ *
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,17 @@
  * limitations under the License.
  */
 package org.wildfly.elytron.web.undertow.server;
+
+import static io.undertow.util.Headers.AUTHORIZATION;
+import static io.undertow.util.Headers.BASIC;
+import static io.undertow.util.Headers.WWW_AUTHENTICATE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.undertow.util.FlexBase64;
 import io.undertow.util.StatusCodes;
@@ -35,17 +46,6 @@ import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.permission.PermissionVerifier;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static io.undertow.util.Headers.AUTHORIZATION;
-import static io.undertow.util.Headers.BASIC;
-import static io.undertow.util.Headers.WWW_AUTHENTICATE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
 /**
  * Test case to test HTTP BASIC authentication where authentication is backed by Elytron.

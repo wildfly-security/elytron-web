@@ -1,4 +1,35 @@
+/*
+ * JBoss, Home of Professional Open Source
+ *
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.wildfly.elytron.web.undertow.server.util;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import io.undertow.UndertowLogger;
 import io.undertow.UndertowMessages;
@@ -21,20 +52,6 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.xnio.XnioExecutor;
 import org.xnio.XnioIoThread;
 import org.xnio.XnioWorker;
-
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A modified version of {@link io.undertow.server.session.InMemorySessionManager} using a Infinispan distributable cache.
@@ -113,6 +130,8 @@ public class InfinispanSessionManager implements SessionManager, SessionManagerS
     public void start() {
         createdSessionCount.set(0);
         expiredSessionCount.set(0);
+        // here we create a replicated cache using a cluster with name 'default-cluster'.
+        // sessions are replicate across all nodes joining the same cluster.
         this.cacheManager = new DefaultCacheManager(
                 GlobalConfigurationBuilder.defaultClusteredBuilder()
                         .globalJmxStatistics().cacheManagerName(deploymentName)

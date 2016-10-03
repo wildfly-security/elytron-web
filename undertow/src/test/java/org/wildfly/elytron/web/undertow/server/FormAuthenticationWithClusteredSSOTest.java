@@ -1,7 +1,7 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2015 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * JBoss, Home of Professional Open Source
+ *
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,20 @@
  * limitations under the License.
  */
 package org.wildfly.elytron.web.undertow.server;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
+
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import io.undertow.server.session.InMemorySessionManager;
 import io.undertow.server.session.SessionManager;
@@ -48,20 +62,6 @@ import org.wildfly.security.http.util.sso.SingleSignOnSessionFactory;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.permission.PermissionVerifier;
-
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
 /**
  * Test case to test HTTP FORM authentication where authentication is backed by Elytron and session replication is enabled.
