@@ -48,16 +48,17 @@ public class ScopeSessionListener implements SessionListener {
         this.scopeResolvers = scopeResolvers;
     }
 
-    synchronized void registerListener(Session session, Consumer<HttpScopeNotification> notificationConsumer) {
-        String id = session.getId();
-        List<Consumer<HttpScopeNotification>> consumersForSession;
-        if (registeredListeners.containsKey(id)) {
-            consumersForSession = registeredListeners.get(id);
-        } else {
-            consumersForSession = new ArrayList<>();
-            registeredListeners.put(id, consumersForSession);
+    public void registerListener(String sessionId, Consumer<HttpScopeNotification> notificationConsumer) {
+        synchronized (this) {
+            List<Consumer<HttpScopeNotification>> consumersForSession;
+            if (registeredListeners.containsKey(sessionId)) {
+                consumersForSession = registeredListeners.get(sessionId);
+            } else {
+                consumersForSession = new ArrayList<>();
+                registeredListeners.put(sessionId, consumersForSession);
+            }
+            consumersForSession.add(notificationConsumer);
         }
-        consumersForSession.add(notificationConsumer);
     }
 
     @Override
