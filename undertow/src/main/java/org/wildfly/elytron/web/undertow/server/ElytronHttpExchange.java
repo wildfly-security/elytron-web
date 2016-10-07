@@ -447,7 +447,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
             @Override
             public void registerForNotification(Consumer<HttpScopeNotification> notificationConsumer) {
                 if (supportsNotifications()) {
-                    scopeSessionListener.registerListener(session, notificationConsumer);
+                    scopeSessionListener.registerListener(session.getId(), notificationConsumer);
                 }
             }
         };
