@@ -140,7 +140,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
 
     @Override
     protected String getMechanismName() {
-        return "CLIENT_CERT";
+        return "CLIENT-CERT";
     }
 
     @Override
