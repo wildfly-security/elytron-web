@@ -37,14 +37,14 @@
     <description>Integration project for integrating Elytron based HTTP authentication with web containers.</description>
 
     <properties>
-        <version.org.wildfly.security.elytron>1.1.0.Beta12</version.org.wildfly.security.elytron>
-        <version.org.wildfly.common>1.1.0.Final</version.org.wildfly.common>
+        <version.org.wildfly.security.elytron>1.1.0.Beta16</version.org.wildfly.security.elytron>
+        <version.org.wildfly.common>1.2.0.Beta1</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.1</version.org.apache.httpcomponents.httpcore>
-        <version.org.jboss.logmanager>2.0.0.Final</version.org.jboss.logmanager>
+        <version.org.jboss.logmanager>2.0.4.Final</version.org.jboss.logmanager>
         <version.org.jboss.logmanager.log4j-jboss>1.1.2.Final</version.org.jboss.logmanager.log4j-jboss>
-        <version.org.jboss.modules>1.4.3.Final</version.org.jboss.modules>
-        <version.org.jboss.xnio>3.3.1.Final</version.org.jboss.xnio>
+        <version.org.jboss.modules>1.6.0.Beta3</version.org.jboss.modules>
+        <version.org.jboss.xnio>3.4.1.Final</version.org.jboss.xnio>
         <version.junit.junit>4.11</version.junit.junit>
         <version.org.infinispan.infinispan-embedded>8.2.3.Final</version.org.infinispan.infinispan-embedded>
         <version.org.wildfly.checkstyle-config>1.0.3.Final</version.org.wildfly.checkstyle-config>
