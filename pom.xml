@@ -56,6 +56,7 @@
 
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
     </properties>
 
     <modules>
@@ -99,7 +100,7 @@
                             <log4j.defaultInitOverride>true</log4j.defaultInitOverride>
                             <test.level>${test.level}</test.level>
                         </systemPropertyVariables>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
                         <trimStackTrace>false</trimStackTrace>
                         <printSummary>true</printSummary>
                         <includes>
