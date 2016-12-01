@@ -135,7 +135,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
                 .setSSLContext(createUnrecognizedSSLContext())
                 .setSSLHostnameVerifier((String h, SSLSession s) -> true)
                 .build();
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))).getStatusLine().getStatusCode());
+        assertEquals(HttpStatus.SC_FORBIDDEN, httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))).getStatusLine().getStatusCode());
     }
 
     @Override
