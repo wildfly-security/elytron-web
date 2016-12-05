@@ -47,6 +47,7 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
@@ -68,6 +69,7 @@ import org.wildfly.security.permission.PermissionVerifier;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Ignore("https://github.com/wildfly-security/elytron-web/issues/45")
 public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMechanismTest {
 
     private Map<Integer, SessionManager> sessionManagers = new HashMap<>();
