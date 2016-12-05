@@ -20,6 +20,7 @@ package org.wildfly.elytron.web.undertow.server;
 import static org.junit.Assert.assertEquals;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +42,6 @@ import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.realm.SimpleRealmEntry;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityDomain;
@@ -144,10 +144,11 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
         delegate.setPasswordMap(passwordMap);
 
         SecurityRealm securityRealm = new SecurityRealm() {
+
             @Override
-            public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
                 realmIdentityInvocationCount.incrementAndGet();
-                return delegate.getRealmIdentity(locator);
+                return delegate.getRealmIdentity(principal);
             }
 
             @Override

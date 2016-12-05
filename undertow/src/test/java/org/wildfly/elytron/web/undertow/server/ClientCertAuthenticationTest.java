@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.Principal;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.http.HttpStatus;
@@ -43,7 +44,6 @@ import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
@@ -149,9 +149,9 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
 
         this.securityRealm = new SecurityRealm() {
             @Override
-            public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
                 realmIdentityInvocationCount.incrementAndGet();
-                return delegate.getRealmIdentity(locator);
+                return delegate.getRealmIdentity(principal);
             }
 
             @Override
@@ -170,7 +170,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
                 .build()
                 .setDefaultRealmName("KeystoreRealm")
                 .setPrincipalDecoder(PrincipalDecoder.aggregate(new X500AttributePrincipalDecoder("2.5.4.3", 1), PrincipalDecoder.DEFAULT))
-                .setPreRealmRewriter(s -> s.toLowerCase())
+                .setPreRealmRewriter((String s) -> s.toLowerCase())
                 .setPermissionMapper((principal, roles) -> PermissionVerifier.from(new LoginPermission()));
 
 
