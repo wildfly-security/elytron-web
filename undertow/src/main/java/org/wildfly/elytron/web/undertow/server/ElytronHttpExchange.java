@@ -368,7 +368,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         SessionManager sessionManager = getSessionManager();
         SessionConfig sessionConfig = getSessionConfig();
 
-        if (sessionManager == null && sessionConfig == null) {
+        if (sessionManager == null || sessionConfig == null) {
             return new HttpScope() {
                 @Override
                 public boolean exists() {
