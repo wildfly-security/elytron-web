@@ -1,6 +1,8 @@
 language: java
 jdk:
 - oraclejdk8
+install: echo LOL
+script: mvn -s .travis-settings.xml verify -B -fae
 env:
   global:
     secure: "qwICFKcjHheZcPEAt2aVO+4VcNAhQlCzxS2Tc7kD0ec3mnlNadrHLeV6DSiCIzamoIh5NEKjreMC8hzJYkJHrqmfyuwjg8smvikDcnfnUAFPaq6KC9sOKTkUeqjaY9B5F+6vfbFY+mwSDzsaCjBn5xjTbycBHORGzhhEQIGvjkvc71Sx1gt8uQq7SDTWls3UlNRnOXiDHmePD4nq+3ryMWwhpCTiQlbCcdXG9SM3ib9T2jJXBtGzjdj131PMMGUpcwWwphd6roSqB9uJrwOMbqnTJdigdmELhp1N0F/2EyWgx8ymkfDzCkcqcl23Q652shbVlSEz1SWyIct2g5H1osq9qw0f4Y8ZTyInPgXU3sYiP9hDroGoV7XEs2kG3ujjT0Yu6KmxVHqA4mKhvUN4CtrU18PJ+r0czY2xTOOs1MU/LdR9LI3krVZiZ4VS/i3G5+4brp5dWhks1s2DXRlt64X4+t3AcgfN5VNMuUenQAmigdKAIUJS/UDCugWQuIdTh1V/SB/mXIgIYvqWJoK+q9PQr5odgwfkLR+Lv39zKEwfzAUca1I543X6PkNOFh9RjhT1M4skCLjsMmEiYTo9Qr6Y5c4F4y4vDQAf9H9cqVPW2cxGOqRAFBK2YlRbPG5dBuDnJDZ1wFlYx3+v7J20mMCjjXTkIHaoK3CaGlagR90="
@@ -11,6 +13,6 @@ addons:
       description: Elytron Coverity Scan via Travis CI
     notification_email: josef.cacek@gmail.com
     build_command_prepend: mvn clean
-    build_command: mvn -DskipTests=true compile
+    build_command: mvn -s .travis-settings.xml -DskipTests=true compile
     branch_pattern: master
 
