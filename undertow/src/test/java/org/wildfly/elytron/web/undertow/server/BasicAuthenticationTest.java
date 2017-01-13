@@ -60,7 +60,7 @@ public class BasicAuthenticationTest extends AbstractHttpServerMechanismTest {
     @Test
     public void testUnauthorized() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.getServerUri());
+        HttpGet get = new HttpGet(server.createUri());
 
         assertUnauthorizedResponse(httpClient.execute(get));
     }
@@ -68,7 +68,7 @@ public class BasicAuthenticationTest extends AbstractHttpServerMechanismTest {
     @Test
     public void testSuccessfulAuthentication() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.getServerUri());
+        HttpGet get = new HttpGet(server.createUri());
 
         get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:Coleoptera".getBytes(), false));
 
@@ -81,7 +81,7 @@ public class BasicAuthenticationTest extends AbstractHttpServerMechanismTest {
     @Test
     public void testFailedAuthentication() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.getServerUri());
+        HttpGet get = new HttpGet(server.createUri());
 
         get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:bad_password".getBytes(), false));
 

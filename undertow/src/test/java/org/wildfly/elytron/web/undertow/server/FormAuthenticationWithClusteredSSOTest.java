@@ -34,6 +34,7 @@ import java.util.UUID;
 import io.undertow.server.session.InMemorySessionManager;
 import io.undertow.server.session.SessionManager;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -47,7 +48,6 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
@@ -57,8 +57,12 @@ import org.wildfly.security.auth.realm.SimpleRealmEntry;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
+import org.wildfly.security.http.util.sso.DefaultSingleSignOnManager;
 import org.wildfly.security.http.util.sso.DefaultSingleSignOnSessionFactory;
+import org.wildfly.security.http.util.sso.DefaultSingleSignOnSessionIdentifierFactory;
 import org.wildfly.security.http.util.sso.SingleSignOnServerMechanismFactory;
+import org.wildfly.security.http.util.sso.SingleSignOnEntry;
+import org.wildfly.security.http.util.sso.SingleSignOnManager;
 import org.wildfly.security.http.util.sso.SingleSignOnSessionFactory;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
@@ -68,38 +72,47 @@ import org.wildfly.security.permission.PermissionVerifier;
  * Test case to test HTTP FORM authentication where authentication is backed by Elytron and session replication is enabled.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * @author Paul Ferraro
  */
-@Ignore("https://github.com/wildfly-security/elytron-web/issues/45")
 public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMechanismTest {
 
-    private Map<Integer, SessionManager> sessionManagers = new HashMap<>();
+    private final Map<Integer, SessionManager> sessionManagers = new HashMap<>();
 
     @Rule
-    public UndertowServer serverA = new UndertowServer(createRootHttpHandler(createSessionManager(7776)), 7776);
+    public UndertowServer serverA = createUndertowServer(7776);
 
     @Rule
-    public UndertowServer serverB = new UndertowServer(createRootHttpHandler(createSessionManager(7777)), 7777);
+    public UndertowServer serverB = createUndertowServer(7777);
 
     @Rule
-    public UndertowServer serverC = new UndertowServer(createRootHttpHandler(createSessionManager(7778)), 7778);
+    public UndertowServer serverC = createUndertowServer(7778);
 
     @Rule
-    public UndertowServer serverD = new UndertowServer(createRootHttpHandler(createSessionManager(7779)), 7779);
+    public UndertowServer serverD = createUndertowServer(7779);
+
     @Rule
-    public UndertowServer serverE = new UndertowServer(createRootHttpHandler(createSessionManager(7780)), 7780);
+    public UndertowServer serverE = createUndertowServer(7780);
+
+    private UndertowServer createUndertowServer(int port) {
+        InMemorySessionManager sessionManager = new InMemorySessionManager(String.valueOf(port));
+
+        sessionManagers.put(port, sessionManager);
+
+        return new UndertowServer(createRootHttpHandler(sessionManager), port, sessionManager.getDeploymentName());
+    }
 
     @Test
     public void testSingleSignOn() throws Exception {
         BasicCookieStore cookieStore = new BasicCookieStore();
         HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
 
-        assertLoginPage(httpClient.execute(new HttpGet(serverA.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
         assertFalse(cookieStore.getCookies().stream().filter(cookie -> cookie.getName().equals("JSESSIONSSOID")).findAny().isPresent());
 
         // authenticate on NODE_A
-        HttpPost httpAuthenticate = new HttpPost(serverA.getServerUri().toString() + "/j_security_check");
-        List parameters = new ArrayList();
+        HttpPost httpAuthenticate = new HttpPost(serverA.createUri("/j_security_check"));
+        List<NameValuePair> parameters = new ArrayList<>(2);
 
         parameters.add(new BasicNameValuePair("j_username", "ladybird"));
         parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
@@ -110,10 +123,10 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
 
         assertTrue(cookieStore.getCookies().stream().filter(cookie -> cookie.getName().equals("JSESSIONSSOID")).findAny().isPresent());
         assertSuccessfulResponse(execute, "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.getServerUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.createUri())), "ladybird");
     }
 
     @Test
@@ -121,11 +134,11 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         BasicCookieStore cookieStore = new BasicCookieStore();
         HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
 
-        assertLoginPage(httpClient.execute(new HttpGet(serverA.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
         // authenticate on NODE_A
-        HttpPost httpAuthenticate = new HttpPost(serverA.getServerUri().toString() + "/j_security_check");
-        List parameters = new ArrayList();
+        HttpPost httpAuthenticate = new HttpPost(serverA.createUri("/j_security_check"));
+        List<NameValuePair> parameters = new ArrayList<>();
 
         parameters.add(new BasicNameValuePair("j_username", "ladybird"));
         parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
@@ -135,18 +148,18 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         HttpResponse execute = httpClient.execute(httpAuthenticate);
 
         assertSuccessfulResponse(execute, "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.getServerUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.createUri())), "ladybird");
 
-        httpClient.execute(new HttpGet(serverB.getServerUri().toString() + "/logout"));
+        httpClient.execute(new HttpGet(serverB.createUri("/logout")));
 
-        assertLoginPage(httpClient.execute(new HttpGet(serverC.getServerUri())));
-        assertLoginPage(httpClient.execute(new HttpGet(serverA.getServerUri())));
-        assertLoginPage(httpClient.execute(new HttpGet(serverB.getServerUri())));
-        assertLoginPage(httpClient.execute(new HttpGet(serverD.getServerUri())));
-        assertLoginPage(httpClient.execute(new HttpGet(serverE.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverC.createUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverB.createUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverD.createUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverE.createUri())));
     }
 
     @Test
@@ -154,11 +167,11 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         BasicCookieStore cookieStore = new BasicCookieStore();
         HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
 
-        assertLoginPage(httpClient.execute(new HttpGet(serverA.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
         // authenticate on NODE_A
-        HttpPost httpAuthenticate = new HttpPost(serverA.getServerUri().toString() + "/j_security_check");
-        List parameters = new ArrayList();
+        HttpPost httpAuthenticate = new HttpPost(serverA.createUri("/j_security_check"));
+        List<NameValuePair> parameters = new ArrayList<>(2);
 
         parameters.add(new BasicNameValuePair("j_username", "ladybird"));
         parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
@@ -168,19 +181,19 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         HttpResponse execute = httpClient.execute(httpAuthenticate);
 
         assertSuccessfulResponse(execute, "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.getServerUri())), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.getServerUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.createUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.createUri())), "ladybird");
 
         serverC.forceShutdown();
         serverE.forceShutdown();
 
-        httpClient.execute(new HttpGet(serverB.getServerUri().toString() + "/logout"));
+        httpClient.execute(new HttpGet(serverB.createUri("/logout")));
 
-        assertLoginPage(httpClient.execute(new HttpGet(serverA.getServerUri())));
-        assertLoginPage(httpClient.execute(new HttpGet(serverB.getServerUri())));
-        assertLoginPage(httpClient.execute(new HttpGet(serverD.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverB.createUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverD.createUri())));
     }
 
     @Test
@@ -188,11 +201,11 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         BasicCookieStore cookieStore = new BasicCookieStore();
         HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
 
-        assertLoginPage(httpClient.execute(new HttpGet(serverA.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
         for (int i = 0; i < 10; i++) {
-            HttpPost httpAuthenticate = new HttpPost(serverA.getServerUri().toString() + "/j_security_check");
-            List parameters = new ArrayList();
+            HttpPost httpAuthenticate = new HttpPost(serverA.createUri("/j_security_check"));
+            List<NameValuePair> parameters = new ArrayList<>(2);
 
             parameters.add(new BasicNameValuePair("j_username", "ladybird"));
             parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
@@ -202,26 +215,22 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
             HttpResponse execute = httpClient.execute(httpAuthenticate);
 
             assertSuccessfulResponse(execute, "ladybird");
-            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverA.getServerUri())), "ladybird");
-            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.getServerUri())), "ladybird");
-            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.getServerUri())), "ladybird");
-            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.getServerUri())), "ladybird");
-            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.getServerUri())), "ladybird");
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverA.createUri())), "ladybird");
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.createUri())), "ladybird");
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverC.createUri())), "ladybird");
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverD.createUri())), "ladybird");
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverE.createUri())), "ladybird");
 
-            httpClient.execute(new HttpGet(serverA.getServerUri().toString() + "/logout"));
+            httpClient.execute(new HttpGet(serverA.createUri("/logout")));
 
-            assertLoginPage(httpClient.execute(new HttpGet(serverC.getServerUri())));
-            assertLoginPage(httpClient.execute(new HttpGet(serverA.getServerUri())));
-            assertLoginPage(httpClient.execute(new HttpGet(serverB.getServerUri())));
-            assertLoginPage(httpClient.execute(new HttpGet(serverD.getServerUri())));
-            assertLoginPage(httpClient.execute(new HttpGet(serverE.getServerUri())));
+            assertLoginPage(httpClient.execute(new HttpGet(serverC.createUri())));
+            assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
+            assertLoginPage(httpClient.execute(new HttpGet(serverB.createUri())));
+            assertLoginPage(httpClient.execute(new HttpGet(serverD.createUri())));
+            assertLoginPage(httpClient.execute(new HttpGet(serverE.createUri())));
         }
 
-        assertEquals(1, sessionManagers.get(7776).getActiveSessions().size());
-        assertEquals(1, sessionManagers.get(7777).getActiveSessions().size());
-        assertEquals(1, sessionManagers.get(7778).getActiveSessions().size());
-        assertEquals(1, sessionManagers.get(7779).getActiveSessions().size());
-        assertEquals(1, sessionManagers.get(7780).getActiveSessions().size());
+        this.sessionManagers.values().forEach(manager -> assertEquals(manager.getDeploymentName(), 1, manager.getActiveSessions().size()));
     }
 
     @Override
@@ -250,7 +259,7 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
     }
 
     @Override
-    protected HttpServerAuthenticationMechanismFactory doCreateHttpServerMechanismFactory(HashMap properties) {
+    protected HttpServerAuthenticationMechanismFactory doCreateHttpServerMechanismFactory(Map<String, ?> properties) {
         HttpServerAuthenticationMechanismFactory delegate = super.doCreateHttpServerMechanismFactory(properties);
 
         KeyStore keyStore;
@@ -265,7 +274,7 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(
                 GlobalConfigurationBuilder.defaultClusteredBuilder()
                         .globalJmxStatistics().cacheManagerName(cacheManagerName)
-                        .transport().nodeName(cacheManagerName).clusterName("default-cluster")
+                        .transport().nodeName(cacheManagerName)
                         .build(),
                 new ConfigurationBuilder()
                         .clustering()
@@ -273,20 +282,12 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
                         .build()
         );
 
-        Cache<String, Object> sessions = cacheManager.getCache();
-
-        SingleSignOnServerMechanismFactory.SingleSignOnConfiguration signOnConfiguration = new SingleSignOnServerMechanismFactory.SingleSignOnConfiguration("JSESSIONSSOID", null, null, false, false);
-        SingleSignOnSessionFactory singleSignOnSessionFactory = new DefaultSingleSignOnSessionFactory(sessions, keyStore, "server", "password", null);
+        Cache<String, SingleSignOnEntry> cache = cacheManager.getCache();
+        SingleSignOnManager manager = new DefaultSingleSignOnManager(cache, new DefaultSingleSignOnSessionIdentifierFactory(), (id, entry) -> cache.put(id, entry));
+        SingleSignOnServerMechanismFactory.SingleSignOnConfiguration signOnConfiguration = new SingleSignOnServerMechanismFactory.SingleSignOnConfiguration("JSESSIONSSOID", null, "/", false, false);
+        SingleSignOnSessionFactory singleSignOnSessionFactory = new DefaultSingleSignOnSessionFactory(manager, keyStore, "server", "password", null);
 
         return new SingleSignOnServerMechanismFactory(delegate, singleSignOnSessionFactory, signOnConfiguration);
-    }
-
-    private  SessionManager createSessionManager(int port) {
-        InMemorySessionManager sessionManager = new InMemorySessionManager("" + port);
-
-        sessionManagers.put(port, sessionManager);
-
-        return sessionManager;
     }
 
     private KeyStore loadKeyStore(final String path) throws Exception {

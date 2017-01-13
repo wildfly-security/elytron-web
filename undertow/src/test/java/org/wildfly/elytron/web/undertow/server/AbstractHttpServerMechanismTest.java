@@ -24,6 +24,7 @@ import java.security.Provider;
 import java.security.Security;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.undertow.Handlers;
@@ -57,6 +58,7 @@ import org.wildfly.security.http.util.PropertiesServerMechanismFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * @author Paul Ferraro
  */
 public abstract class AbstractHttpServerMechanismTest {
 
@@ -93,13 +95,13 @@ public abstract class AbstractHttpServerMechanismTest {
         assertTrue(EntityUtils.toString(response.getEntity()).contains("Login Page"));
     }
 
-    protected HttpAuthenticationFactory createHttpAuthenticationFactory() throws Exception {
+    protected HttpAuthenticationFactory createHttpAuthenticationFactory(String contextPath) throws Exception {
         SecurityDomain securityDomain = getSecurityDomain();
 
-        HashMap properties = new HashMap();
+        Map<String, String> properties = new HashMap<>();
 
-        properties.put(HttpConstants.CONFIG_LOGIN_PAGE, "/login.html");
-        properties.put(HttpConstants.CONFIG_ERROR_PAGE, "/error.html");
+        properties.put(HttpConstants.CONFIG_LOGIN_PAGE, contextPath + "/login.html");
+        properties.put(HttpConstants.CONFIG_ERROR_PAGE, contextPath + "/error.html");
 
         HttpServerAuthenticationMechanismFactory factory = doCreateHttpServerMechanismFactory(properties);
 
@@ -113,7 +115,7 @@ public abstract class AbstractHttpServerMechanismTest {
                 .build();
     }
 
-    protected HttpServerAuthenticationMechanismFactory doCreateHttpServerMechanismFactory(HashMap properties) {
+    protected HttpServerAuthenticationMechanismFactory doCreateHttpServerMechanismFactory(Map<String, ?> properties) {
         return new PropertiesServerMechanismFactory(new FilterServerMechanismFactory(new ServerMechanismFactoryImpl(), true, getMechanismName()), properties);
     }
 
@@ -135,7 +137,10 @@ public abstract class AbstractHttpServerMechanismTest {
 
     protected HttpHandler createRootHttpHandler(SessionManager sessionManager) {
         try {
-            HttpAuthenticationFactory httpAuthenticationFactory = createHttpAuthenticationFactory();
+            String deploymentName = (sessionManager != null) ? sessionManager.getDeploymentName() : null;
+            String contextPath = (deploymentName != null) ? "/" + deploymentName : "";
+
+            HttpAuthenticationFactory httpAuthenticationFactory = createHttpAuthenticationFactory(contextPath);
             HttpHandler rootHandler = new ElytronRunAsHandler(new SessionInvalidationHandler(new TestResponseHandler(getSecurityDomain())));
 
             rootHandler = new BlockingHandler(rootHandler);
@@ -167,17 +172,21 @@ public abstract class AbstractHttpServerMechanismTest {
             rootHandler = elytronContextHandlerBuilder.build();
 
             if (sessionManager != null) {
-                rootHandler = Handlers.path(new SessionAttachmentHandler(rootHandler, sessionManager, new SessionCookieConfig()));
+                SessionCookieConfig sessionConfig = new SessionCookieConfig();
+                if (!contextPath.isEmpty()) {
+                    sessionConfig.setPath(contextPath);
+                }
+                rootHandler = Handlers.path(new SessionAttachmentHandler(rootHandler, sessionManager, sessionConfig));
             }
 
             PathHandler finalHandler = Handlers.path();
 
             finalHandler = finalHandler
-                    .addExactPath("/login.html", exchange -> {
+                    .addExactPath(contextPath + "/login.html", exchange -> {
                         exchange.getResponseSender().send("Login Page");
                         exchange.endExchange();
                     })
-                    .addPrefixPath("/", rootHandler);
+                    .addPrefixPath(contextPath.isEmpty() ? "/" : contextPath, rootHandler);
 
             return finalHandler;
         } catch (Exception cause) {

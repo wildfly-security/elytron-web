@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.undertow.server.session.InMemorySessionManager;
+
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -61,7 +63,7 @@ import org.wildfly.security.permission.PermissionVerifier;
 public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
 
     @Rule
-    public UndertowServer server = new UndertowServer(createRootHttpHandler(new InMemorySessionManager("default-session-manager")));
+    public UndertowServer server = new UndertowServer(createRootHttpHandler(new InMemorySessionManager(null)));
 
     private AtomicInteger realmIdentityInvocationCount = new AtomicInteger(0);
 
@@ -69,14 +71,14 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
     public void testRedirectLoginPage() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
 
-        assertLoginPage(httpClient.execute(new HttpGet(server.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(server.createUri())));
     }
 
     @Test
     public void testFormSuccessfulAuthentication() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost httpAuthenticate = new HttpPost(server.getServerUri().toString() + "/j_security_check");
-        List parameters = new ArrayList();
+        HttpPost httpAuthenticate = new HttpPost(server.createUri("/j_security_check"));
+        List<NameValuePair> parameters = new ArrayList<>(2);
 
         parameters.add(new BasicNameValuePair("j_username", "ladybird"));
         parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
@@ -90,8 +92,8 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
     @Test
     public void testSessionIdentityCache() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost httpAuthenticate = new HttpPost(server.getServerUri().toString() + "/j_security_check");
-        List parameters = new ArrayList();
+        HttpPost httpAuthenticate = new HttpPost(server.createUri("/j_security_check"));
+        List<NameValuePair> parameters = new ArrayList<>(2);
 
         parameters.add(new BasicNameValuePair("j_username", "ladybird"));
         parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
@@ -101,7 +103,7 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
         assertSuccessfulResponse(httpClient.execute(httpAuthenticate), "ladybird");
 
         for (int i = 0; i < 10; i++) {
-            assertSuccessfulResponse(httpClient.execute(new HttpGet(server.getServerUri())), "ladybird");
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(server.createUri())), "ladybird");
         }
 
         assertEquals(1, realmIdentityInvocationCount.get());
@@ -110,8 +112,8 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
     @Test
     public void testLogout() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost httpAuthenticate = new HttpPost(server.getServerUri().toString() + "/j_security_check");
-        List parameters = new ArrayList();
+        HttpPost httpAuthenticate = new HttpPost(server.createUri("/j_security_check"));
+        List<NameValuePair> parameters = new ArrayList<>(2);
 
         parameters.add(new BasicNameValuePair("j_username", "ladybird"));
         parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
@@ -119,11 +121,11 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
         httpAuthenticate.setEntity(new UrlEncodedFormEntity(parameters));
 
         assertSuccessfulResponse(httpClient.execute(httpAuthenticate), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(server.getServerUri())), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(server.createUri())), "ladybird");
 
-        httpClient.execute(new HttpGet(server.getServerUri().toString() + "/logout"));
+        httpClient.execute(new HttpGet(server.createUri("/logout")));
 
-        assertLoginPage(httpClient.execute(new HttpGet(server.getServerUri())));
+        assertLoginPage(httpClient.execute(new HttpGet(server.createUri())));
 
     }
 
