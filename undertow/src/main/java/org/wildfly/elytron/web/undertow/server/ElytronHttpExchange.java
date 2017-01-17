@@ -305,8 +305,18 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         }
 
         switch (scope) {
-            case APPLICATION:
-                return null;
+            case APPLICATION: {
+                SessionManager sessionManager = getSessionManager();
+                if (sessionManager == null) return null;
+
+                return new HttpScope() {
+                    @Override
+                    public String getID() {
+                        // TODO Find a better mechanism for obtaining a unique deployment ID
+                        return sessionManager.getDeploymentName();
+                    }
+                };
+            }
             case CONNECTION:
                 return getScope(httpServerExchange.getConnection());
             case EXCHANGE:

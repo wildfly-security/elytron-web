@@ -28,7 +28,6 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.InputStream;
-import java.net.URI;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Principal;
@@ -66,7 +65,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
     private SecurityRealm securityRealm;
 
     @Rule
-    public UndertowServer serverConfigurationA = new UndertowServer(createRootHttpHandler(), () -> {
+    public UndertowServer serverA = new UndertowServer(createRootHttpHandler(), () -> {
         try {
             return new SSLContextBuilder()
                     .setSecurityDomain(getSecurityDomain())
@@ -79,7 +78,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
     });
 
     @Rule
-    public UndertowServer serverConfigurationB = new UndertowServer(createRootHttpHandler(), 7777, () -> {
+    public UndertowServer serverB = new UndertowServer(createRootHttpHandler(), 7777, () -> {
         try {
             return new SSLContextBuilder()
                 .setKeyManager(getKeyManager("/tls/scarab.keystore"))
@@ -100,7 +99,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
                 .setSSLHostnameVerifier((String h, SSLSession s) -> true)
                 .build();
 
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverA.createUri())), "ladybird");
     }
 
     @Test
@@ -109,7 +108,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
                 .setSSLContext(createRecognizedSSLContext())
                 .setSSLHostnameVerifier((String h, SSLSession s) -> true)
                 .build();
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7777, null, null, null))), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverB.createUri())), "ladybird");
     }
 
     @Test
@@ -119,10 +118,10 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
                 .setSSLHostnameVerifier((String h, SSLSession s) -> true)
                 .build();
 
-        assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))), "ladybird");
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(serverA.createUri())), "ladybird");
 
         for (int i = 0; i < 10; i++) {
-            assertSuccessfulResponse(httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))), "ladybird");
+            assertSuccessfulResponse(httpClient.execute(new HttpGet(serverA.createUri())), "ladybird");
         }
 
         // two hits during the first interaction, after that we should expect no more hits to the realm
@@ -135,7 +134,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
                 .setSSLContext(createUnrecognizedSSLContext())
                 .setSSLHostnameVerifier((String h, SSLSession s) -> true)
                 .build();
-        assertEquals(HttpStatus.SC_FORBIDDEN, httpClient.execute(new HttpGet(new URI("https", null, "localhost", 7776, null, null, null))).getStatusLine().getStatusCode());
+        assertEquals(HttpStatus.SC_FORBIDDEN, httpClient.execute(new HttpGet(serverA.createUri())).getStatusLine().getStatusCode());
     }
 
     @Override

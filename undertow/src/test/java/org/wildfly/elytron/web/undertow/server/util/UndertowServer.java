@@ -37,22 +37,32 @@ public class UndertowServer extends ExternalResource {
     private HttpHandler rootHttpHandler = null;
     private final Supplier<SSLContext> serverSslContext;
     private final int port;
+    private final String deploymentName;
 
     public UndertowServer(HttpHandler root) {
         this(root, (Supplier<SSLContext>) null);
     }
 
     public UndertowServer(HttpHandler root, int port) {
-        this(root, port, null);
+        this(root, port, null, null);
+    }
+
+    public UndertowServer(HttpHandler root, int port, String deploymentName) {
+        this(root, port, deploymentName, null);
     }
 
     public UndertowServer(HttpHandler root, Supplier<SSLContext> serverSslContext) {
-        this(root, 7776, serverSslContext);
+        this(root, 7776, null, serverSslContext);
     }
 
     public UndertowServer(HttpHandler root, int port, Supplier<SSLContext> serverSslContext) {
+        this(root, port, null, serverSslContext);
+    }
+
+    public UndertowServer(HttpHandler root, int port, String deploymentName, Supplier<SSLContext> serverSslContext) {
         this.rootHttpHandler = root;
         this.port = port;
+        this.deploymentName = deploymentName;
         this.serverSslContext = serverSslContext;
     }
 
@@ -84,8 +94,12 @@ public class UndertowServer extends ExternalResource {
         server = null;
     }
 
-    public URI getServerUri() throws URISyntaxException {
-        return new URI("http", null, "localhost", port, null, null, null);
+    public URI createUri() throws URISyntaxException {
+        return this.createUri("");
+    }
+
+    public URI createUri(String path) throws URISyntaxException {
+        return new URI((this.serverSslContext != null) ? "https" : "http", null, "localhost", this.port, ((this.deploymentName != null) ? "/" + this.deploymentName : "") + path, null, null);
     }
 
     public void forceShutdown() {
