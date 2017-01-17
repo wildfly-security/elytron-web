@@ -48,6 +48,7 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
@@ -274,7 +275,7 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(
                 GlobalConfigurationBuilder.defaultClusteredBuilder()
                         .globalJmxStatistics().cacheManagerName(cacheManagerName)
-                        .transport().nodeName(cacheManagerName)
+                        .transport().nodeName(cacheManagerName).addProperty(JGroupsTransport.CONFIGURATION_FILE, "fast.xml")
                         .build(),
                 new ConfigurationBuilder()
                         .clustering()

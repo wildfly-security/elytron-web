@@ -37,7 +37,7 @@
     <description>Integration project for integrating Elytron based HTTP authentication with web containers.</description>
 
     <properties>
-        <version.org.wildfly.security.elytron>1.1.0.Beta18</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.1.0.Beta20-SNAPSHOT</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.2.0.Beta1</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.1</version.org.apache.httpcomponents.httpcore>
@@ -46,7 +46,7 @@
         <version.org.jboss.modules>1.6.0.Beta3</version.org.jboss.modules>
         <version.org.jboss.xnio>3.4.1.Final</version.org.jboss.xnio>
         <version.junit.junit>4.11</version.junit.junit>
-        <version.org.infinispan.infinispan-embedded>8.2.3.Final</version.org.infinispan.infinispan-embedded>
+        <version.org.infinispan>8.2.3.Final</version.org.infinispan>
         <version.org.wildfly.checkstyle-config>1.0.3.Final</version.org.wildfly.checkstyle-config>
         <version.com.puppycrawl.tools.checkstyle>6.3</version.com.puppycrawl.tools.checkstyle>
 
@@ -246,8 +246,8 @@
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-embedded</artifactId>
-                <version>${version.org.infinispan.infinispan-embedded}</version>
+                <artifactId>infinispan-core</artifactId>
+                <version>${version.org.infinispan}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
