@@ -101,6 +101,7 @@
                             <test.level>${test.level}</test.level>
                             <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
                             <java.net.preferIPv6Addresses>false</java.net.preferIPv6Addresses>
+                            <jgroups.bind_addr>127.0.0.1</jgroups.bind_addr>
                         </systemPropertyVariables>
                         <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
                         <trimStackTrace>false</trimStackTrace>
