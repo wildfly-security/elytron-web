@@ -94,11 +94,12 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.surefire.plugin}</version>
                     <configuration>
-                        <argLine>-server -Djava.net.preferIPv4Stack=true</argLine>
+                        <argLine>-server</argLine>
                         <systemPropertyVariables>
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <log4j.defaultInitOverride>true</log4j.defaultInitOverride>
                             <test.level>${test.level}</test.level>
+                            <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
                         </systemPropertyVariables>
                         <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
                         <trimStackTrace>false</trimStackTrace>
