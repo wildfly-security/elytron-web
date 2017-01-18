@@ -22,8 +22,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
-import java.io.InputStream;
-import java.security.KeyStore;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -263,14 +264,6 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
     protected HttpServerAuthenticationMechanismFactory doCreateHttpServerMechanismFactory(Map<String, ?> properties) {
         HttpServerAuthenticationMechanismFactory delegate = super.doCreateHttpServerMechanismFactory(properties);
 
-        KeyStore keyStore;
-
-        try {
-            keyStore = loadKeyStore("/tls/server.keystore");
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to load server key store.", cause);
-        }
-
         String cacheManagerName = UUID.randomUUID().toString();
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(
                 GlobalConfigurationBuilder.defaultClusteredBuilder()
@@ -286,17 +279,15 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         Cache<String, SingleSignOnEntry> cache = cacheManager.getCache();
         SingleSignOnManager manager = new DefaultSingleSignOnManager(cache, new DefaultSingleSignOnSessionIdentifierFactory(), (id, entry) -> cache.put(id, entry));
         SingleSignOnServerMechanismFactory.SingleSignOnConfiguration signOnConfiguration = new SingleSignOnServerMechanismFactory.SingleSignOnConfiguration("JSESSIONSSOID", null, "/", false, false);
-        SingleSignOnSessionFactory singleSignOnSessionFactory = new DefaultSingleSignOnSessionFactory(manager, keyStore, "server", "password", null);
 
-        return new SingleSignOnServerMechanismFactory(delegate, singleSignOnSessionFactory, signOnConfiguration);
-    }
+        try {
+            KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
 
-    private KeyStore loadKeyStore(final String path) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance("jks");
-        try (InputStream caTrustStoreFile = ClientCertAuthenticationTest.class.getResourceAsStream(path)) {
-            keyStore.load(caTrustStoreFile, "password".toCharArray());
+            SingleSignOnSessionFactory singleSignOnSessionFactory = new DefaultSingleSignOnSessionFactory(manager, keyPair);
+
+            return new SingleSignOnServerMechanismFactory(delegate, singleSignOnSessionFactory, signOnConfiguration);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-
-        return keyStore;
     }
 }
