@@ -23,17 +23,14 @@ import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
-import io.undertow.server.session.InMemorySessionManager;
-import io.undertow.server.session.SessionManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -52,6 +49,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.junit.Rule;
 import org.junit.Test;
+import org.wildfly.elytron.web.undertow.server.util.KeyPairSupplier;
 import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
@@ -62,13 +60,16 @@ import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.util.sso.DefaultSingleSignOnManager;
 import org.wildfly.security.http.util.sso.DefaultSingleSignOnSessionFactory;
 import org.wildfly.security.http.util.sso.DefaultSingleSignOnSessionIdentifierFactory;
-import org.wildfly.security.http.util.sso.SingleSignOnServerMechanismFactory;
 import org.wildfly.security.http.util.sso.SingleSignOnEntry;
 import org.wildfly.security.http.util.sso.SingleSignOnManager;
+import org.wildfly.security.http.util.sso.SingleSignOnServerMechanismFactory;
 import org.wildfly.security.http.util.sso.SingleSignOnSessionFactory;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.permission.PermissionVerifier;
+
+import io.undertow.server.session.InMemorySessionManager;
+import io.undertow.server.session.SessionManager;
 
 /**
  * Test case to test HTTP FORM authentication where authentication is backed by Elytron and session replication is enabled.
@@ -80,20 +81,22 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
 
     private final Map<Integer, SessionManager> sessionManagers = new HashMap<>();
 
-    @Rule
-    public UndertowServer serverA = createUndertowServer(7776);
+    private final Supplier<KeyPair> keyPairSupplier = new KeyPairSupplier();
 
     @Rule
-    public UndertowServer serverB = createUndertowServer(7777);
+    public final UndertowServer serverA = createUndertowServer(7776);
 
     @Rule
-    public UndertowServer serverC = createUndertowServer(7778);
+    public final UndertowServer serverB = createUndertowServer(7777);
 
     @Rule
-    public UndertowServer serverD = createUndertowServer(7779);
+    public final UndertowServer serverC = createUndertowServer(7778);
 
     @Rule
-    public UndertowServer serverE = createUndertowServer(7780);
+    public final UndertowServer serverD = createUndertowServer(7779);
+
+    @Rule
+    public final UndertowServer serverE = createUndertowServer(7780);
 
     private UndertowServer createUndertowServer(int port) {
         InMemorySessionManager sessionManager = new InMemorySessionManager(String.valueOf(port));
@@ -280,14 +283,8 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
         SingleSignOnManager manager = new DefaultSingleSignOnManager(cache, new DefaultSingleSignOnSessionIdentifierFactory(), (id, entry) -> cache.put(id, entry));
         SingleSignOnServerMechanismFactory.SingleSignOnConfiguration signOnConfiguration = new SingleSignOnServerMechanismFactory.SingleSignOnConfiguration("JSESSIONSSOID", null, "/", false, false);
 
-        try {
-            KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        SingleSignOnSessionFactory singleSignOnSessionFactory = new DefaultSingleSignOnSessionFactory(manager, this.keyPairSupplier.get());
 
-            SingleSignOnSessionFactory singleSignOnSessionFactory = new DefaultSingleSignOnSessionFactory(manager, keyPair);
-
-            return new SingleSignOnServerMechanismFactory(delegate, singleSignOnSessionFactory, signOnConfiguration);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        return new SingleSignOnServerMechanismFactory(delegate, singleSignOnSessionFactory, signOnConfiguration);
     }
 }
