@@ -398,7 +398,10 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
 
             @Override
             public String getID() {
-                return session.getId();
+                if (exists()) {
+                    return session.getId();
+                }
+                return null;
             }
 
             @Override
