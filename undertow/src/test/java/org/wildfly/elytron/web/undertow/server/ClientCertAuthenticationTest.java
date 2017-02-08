@@ -139,7 +139,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
 
     @Override
     protected String getMechanismName() {
-        return "CLIENT-CERT";
+        return "CLIENT_CERT";
     }
 
     @Override
@@ -195,7 +195,7 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
     /**
      * Get the key manager backed by the specified key store.
      *
-     * @param keystoreName the name of the key store to load.
+     * @param keystorePath the path to the key store to load.
      * @return the initialised key manager.
      */
     private X509ExtendedKeyManager getKeyManager(final String keystorePath) throws Exception {
