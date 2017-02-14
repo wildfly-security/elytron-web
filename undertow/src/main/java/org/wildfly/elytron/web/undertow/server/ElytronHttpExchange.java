@@ -180,6 +180,11 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
     }
 
     @Override
+    public String getRequestPath() {
+        return httpServerExchange.getRelativePath();
+    }
+
+    @Override
     public Map<String, List<String>> getRequestParameters() {
         if (requestParameters == null) {
             synchronized(this) {
