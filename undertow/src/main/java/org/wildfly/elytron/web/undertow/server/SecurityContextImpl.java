@@ -53,6 +53,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final ElytronHttpExchange httpExchange;
+    private Runnable logoutHandler;
 
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
@@ -76,6 +77,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
                 .setHttpExchangeSpi(this.httpExchange)
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
+                .registerLogoutHandler(this::setLogoutHandler)
                 .build();
 
         try {
@@ -85,6 +87,10 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
             return false;
         }
+    }
+
+    private void setLogoutHandler(Runnable runnable) {
+        this.logoutHandler = runnable;
     }
 
     /**
@@ -126,6 +132,14 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
 
         return false;
+    }
+
+    @Override
+    public void logout() {
+        super.logout();
+        if (logoutHandler != null) {
+            logoutHandler.run();
+        }
     }
 
     private boolean restoreIdentity() {
