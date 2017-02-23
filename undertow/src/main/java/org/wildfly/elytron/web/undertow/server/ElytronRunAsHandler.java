@@ -20,6 +20,7 @@ package org.wildfly.elytron.web.undertow.server;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.concurrent.Callable;
+import java.util.function.BiFunction;
 
 import org.wildfly.security.auth.server.SecurityIdentity;
 
@@ -37,9 +38,15 @@ import io.undertow.server.HttpServerExchange;
 public class ElytronRunAsHandler implements HttpHandler {
 
     private final HttpHandler next;
+    private final BiFunction<SecurityIdentity, HttpServerExchange, SecurityIdentity> identityTransformer;
 
     public ElytronRunAsHandler(HttpHandler next) {
+        this(next, (s, e) -> s);
+    }
+
+    public ElytronRunAsHandler(HttpHandler next, BiFunction<SecurityIdentity, HttpServerExchange, SecurityIdentity> identityTransformer) {
         this.next = checkNotNullParam("next", next);
+        this.identityTransformer = checkNotNullParam("identityTransformer", identityTransformer);
     }
 
     /**
@@ -50,6 +57,8 @@ public class ElytronRunAsHandler implements HttpHandler {
         SecurityContext securityContext = exchange.getSecurityContext();
         Account account = securityContext != null ? securityContext.getAuthenticatedAccount() : null;
         SecurityIdentity securityIdentity = (account instanceof ElytronAccount) ? ((ElytronAccount)account).getSecurityIdentity() : null;
+
+        securityIdentity = identityTransformer.apply(securityIdentity, exchange);
 
         if (securityIdentity != null) {
             securityIdentity.runAs((Callable<Void>) () -> {
