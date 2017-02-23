@@ -36,6 +36,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Rule;
 import org.junit.Test;
@@ -76,7 +77,7 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
 
     @Test
     public void testFormSuccessfulAuthentication() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build();
         HttpPost httpAuthenticate = new HttpPost(server.createUri("/j_security_check"));
         List<NameValuePair> parameters = new ArrayList<>(2);
 
@@ -91,7 +92,7 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
 
     @Test
     public void testSessionIdentityCache() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build();
         HttpPost httpAuthenticate = new HttpPost(server.createUri("/j_security_check"));
         List<NameValuePair> parameters = new ArrayList<>(2);
 
@@ -111,7 +112,7 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
 
     @Test
     public void testLogout() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build();
         HttpPost httpAuthenticate = new HttpPost(server.createUri("/j_security_check"));
         List<NameValuePair> parameters = new ArrayList<>(2);
 

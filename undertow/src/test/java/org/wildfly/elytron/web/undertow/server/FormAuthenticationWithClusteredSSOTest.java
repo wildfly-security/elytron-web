@@ -39,6 +39,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
@@ -109,7 +110,7 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
     @Test
     public void testSingleSignOn() throws Exception {
         BasicCookieStore cookieStore = new BasicCookieStore();
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).setRedirectStrategy(new LaxRedirectStrategy()).build();
 
         assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
@@ -137,7 +138,7 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
     @Test
     public void testSingleLogout() throws Exception {
         BasicCookieStore cookieStore = new BasicCookieStore();
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).setRedirectStrategy(new LaxRedirectStrategy()).build();
 
         assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
@@ -170,7 +171,7 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
     @Test
     public void testSingleLogoutWhenNodeIsFailing() throws Exception {
         BasicCookieStore cookieStore = new BasicCookieStore();
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).setRedirectStrategy(new LaxRedirectStrategy()).build();
 
         assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
@@ -204,7 +205,7 @@ public class FormAuthenticationWithClusteredSSOTest extends AbstractHttpServerMe
     @Test
     public void testSessionInvalidation() throws Exception {
         BasicCookieStore cookieStore = new BasicCookieStore();
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).setRedirectStrategy(new LaxRedirectStrategy()).build();
 
         assertLoginPage(httpClient.execute(new HttpGet(serverA.createUri())));
 
