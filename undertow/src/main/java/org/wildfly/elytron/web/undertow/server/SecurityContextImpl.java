@@ -118,6 +118,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
                     if (sessionScope != null && sessionScope.supportsAttachments()) {
                         sessionScope.setAttachment(AUTHENTICATED_PRINCIPAL_KEY, username);
                     }
+                    setupProgramaticLogout(sessionScope);
 
                     authenticationComplete(new ElytronAccount(authorizedIdentity), programaticMechanismName, false);
 
@@ -160,6 +161,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
                     if (authenticationContext.authorize()) {
                         SecurityIdentity authorizedIdentity = authenticationContext.getAuthorizedIdentity();
                         authenticationComplete(new ElytronAccount(authorizedIdentity), programaticMechanismName, false);
+                        setupProgramaticLogout(sessionScope);
 
                         return true;
                     } else {
@@ -196,6 +198,12 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     @Override
     public IdentityManager getIdentityManager() {
         throw new UnsupportedOperationException();
+    }
+
+    private void setupProgramaticLogout(HttpScope sessionScope) {
+        logoutHandler = () -> {
+            sessionScope.setAttachment(AUTHENTICATED_PRINCIPAL_KEY, null);
+        };
     }
 
     static Builder builder() {
