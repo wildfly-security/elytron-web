@@ -68,6 +68,9 @@ public class SecurityContextImpl extends AbstractSecurityContext {
      */
     @Override
     public boolean authenticate() {
+        if(isAuthenticated()) {
+            return true;
+        }
         if (restoreIdentity()) {
             return true;
         }
