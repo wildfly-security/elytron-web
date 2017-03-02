@@ -199,14 +199,14 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                         try {
                             FormData data = parser.parseBlocking();
 
-                            for (String name : queryParameters.keySet()) {
-                                List<String> values = new ArrayList<>(queryParameters.get(name));
-                                if (data.contains(name)) {
-                                    Deque<FormValue> formValues = data.get(name);
+                            for (Map.Entry<String, Deque<String>> queryParametersEntry : queryParameters.entrySet()) {
+                                List<String> values = new ArrayList<>(queryParametersEntry.getValue());
+                                if (data.contains(queryParametersEntry.getKey())) {
+                                    Deque<FormValue> formValues = data.get(queryParametersEntry.getKey());
                                     formValues.stream().filter((FormValue fv) -> fv.isFile() == false)
                                             .forEach((FormValue fv) -> values.add(fv.getValue()));
                                 }
-                                parameters.put(name, Collections.unmodifiableList(values));
+                                parameters.put(queryParametersEntry.getKey(), Collections.unmodifiableList(values));
                             }
 
                             StreamSupport
