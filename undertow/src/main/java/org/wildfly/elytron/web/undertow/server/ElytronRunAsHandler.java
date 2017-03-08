@@ -22,9 +22,9 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 
+import org.wildfly.security.auth.server.FlexibleIdentityAssociation;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
-import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.Account;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -54,13 +54,21 @@ public class ElytronRunAsHandler implements HttpHandler {
      */
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        SecurityContext securityContext = exchange.getSecurityContext();
+        SecurityContextImpl securityContext = (SecurityContextImpl) exchange.getSecurityContext();
         Account account = securityContext != null ? securityContext.getAuthenticatedAccount() : null;
         SecurityIdentity securityIdentity = (account instanceof ElytronAccount) ? ((ElytronAccount)account).getSecurityIdentity() : null;
 
         securityIdentity = identityTransformer.apply(securityIdentity, exchange);
-
-        if (securityIdentity != null) {
+        FlexibleIdentityAssociation flexibleIdentityAssociation = securityContext.getFlexibleIdentityAssociation();
+        if (flexibleIdentityAssociation != null) {
+            if(securityIdentity != null){
+                flexibleIdentityAssociation.setIdentity(securityIdentity);
+            }
+            flexibleIdentityAssociation.runAs((Callable<Void>) () -> {
+                next.handleRequest(exchange);
+                return null;
+            });
+        } else if(securityIdentity != null) {
             securityIdentity.runAs((Callable<Void>) () -> {
                 next.handleRequest(exchange);
                 return null;

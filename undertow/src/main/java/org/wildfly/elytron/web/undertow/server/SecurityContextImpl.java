@@ -23,6 +23,7 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.wildfly.security.auth.server.FlexibleIdentityAssociation;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -54,6 +55,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final ElytronHttpExchange httpExchange;
     private Runnable logoutHandler;
+    private final FlexibleIdentityAssociation flexibleIdentityAssociation;
 
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
@@ -61,6 +63,11 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
+        if(securityDomain != null) {
+            this.flexibleIdentityAssociation = securityDomain.getAnonymousSecurityIdentity().createFlexibleAssociation();
+        } else {
+            this.flexibleIdentityAssociation = null;
+        }
     }
 
     /**
@@ -114,6 +121,9 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             if (authenticationContext.verifyEvidence(evidence)) {
                 if (authenticationContext.authorize()) {
                     SecurityIdentity authorizedIdentity = authenticationContext.getAuthorizedIdentity();
+                    if(flexibleIdentityAssociation != null) {
+                        flexibleIdentityAssociation.setIdentity(authorizedIdentity);
+                    }
                     HttpScope sessionScope = httpExchange.getScope(Scope.SESSION);
                     if (sessionScope != null && sessionScope.supportsAttachments()) {
                         sessionScope.setAttachment(AUTHENTICATED_PRINCIPAL_KEY, username);
@@ -143,6 +153,9 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         super.logout();
         if (logoutHandler != null) {
             logoutHandler.run();
+        }
+        if(flexibleIdentityAssociation != null) {
+            flexibleIdentityAssociation.setIdentity(securityDomain.getAnonymousSecurityIdentity());
         }
     }
 
@@ -204,6 +217,10 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         logoutHandler = () -> {
             sessionScope.setAttachment(AUTHENTICATED_PRINCIPAL_KEY, null);
         };
+    }
+
+    FlexibleIdentityAssociation getFlexibleIdentityAssociation() {
+        return flexibleIdentityAssociation;
     }
 
     static Builder builder() {
