@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,9 +47,12 @@ import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.HttpServerCookie;
 import org.wildfly.security.http.Scope;
+import org.xnio.SslClientAuthMode;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.RenegotiationRequiredException;
+import io.undertow.server.SSLSessionInfo;
 import io.undertow.server.ServerConnection;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
@@ -555,6 +559,17 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
 
 
     }
-
-
+    public Certificate[] renegotiateForClientCertAuth() {
+        SSLSessionInfo info = httpServerExchange.getConnection().getSslSessionInfo();
+        if(info == null) {
+            return null;
+        }
+        try {
+            info.renegotiate(httpServerExchange, SslClientAuthMode.REQUESTED);
+            return httpServerExchange.getConnection().getSslSessionInfo().getPeerCertificates();
+        } catch (IOException | RenegotiationRequiredException e1) {
+            //ignore
+        }
+        return null;
+    }
 }
