@@ -20,6 +20,8 @@ package org.wildfly.elytron.web.undertow.server;
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -34,6 +36,7 @@ import org.wildfly.security.http.HttpAuthenticator;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.Scope;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
@@ -112,7 +115,12 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return false;
         }
 
-        ServerAuthenticationContext authenticationContext = securityDomain.createNewAuthenticationContext();
+        ServerAuthenticationContext authenticationContext;
+        if(WildFlySecurityManager.isChecking()) {
+            authenticationContext = AccessController.doPrivileged((PrivilegedAction<ServerAuthenticationContext>) () -> securityDomain.createNewAuthenticationContext());
+        } else {
+            authenticationContext = securityDomain.createNewAuthenticationContext();
+        }
 
         final PasswordGuessEvidence evidence = new PasswordGuessEvidence(password.toCharArray());
 
