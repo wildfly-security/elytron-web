@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -46,9 +48,12 @@ import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.HttpServerCookie;
 import org.wildfly.security.http.Scope;
+import org.xnio.SslClientAuthMode;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.RenegotiationRequiredException;
+import io.undertow.server.SSLSessionInfo;
 import io.undertow.server.ServerConnection;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
@@ -117,6 +122,26 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         if (connection instanceof HttpServerConnection) {
             return ((HttpServerConnection) connection).getSslSession();
         }
+        return null;
+    }
+
+    @Override
+    public Certificate[] getPeerCertificates(boolean renegotiate) {
+        SSLSessionInfo info = httpServerExchange.getConnection().getSslSessionInfo();
+        if(info == null) {
+            return null;
+        }
+
+        try {
+            Certificate[] peerCertificates = info.getPeerCertificates();
+            if (peerCertificates != null || renegotiate==false) return peerCertificates;
+        } catch (SSLPeerUnverifiedException |RenegotiationRequiredException e) {}
+
+        try {
+            info.renegotiate(httpServerExchange, SslClientAuthMode.REQUESTED);
+            return httpServerExchange.getConnection().getSslSessionInfo().getPeerCertificates();
+        } catch (IOException | RenegotiationRequiredException e) {}
+
         return null;
     }
 
@@ -555,6 +580,5 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
 
 
     }
-
 
 }
