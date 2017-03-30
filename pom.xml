@@ -47,6 +47,9 @@
         <version.org.jboss.xnio>3.5.0.Beta2</version.org.jboss.xnio>
         <version.junit.junit>4.11</version.junit.junit>
         <version.org.infinispan>8.2.6.Final</version.org.infinispan>
+        <version.org.jboss.spec.jboss-json-api_1.0_spec>1.0.0.Final</version.org.jboss.spec.jboss-json-api_1.0_spec>
+        <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
+        <version.com.nimbusds.nimbus-jose-jwt>4.13.1</version.com.nimbusds.nimbus-jose-jwt>
         <version.org.wildfly.checkstyle-config>1.0.6.Final</version.org.wildfly.checkstyle-config>
         <version.com.puppycrawl.tools.checkstyle>6.3</version.com.puppycrawl.tools.checkstyle>
 
@@ -251,6 +254,24 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${version.org.infinispan}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.json</groupId>
+                <artifactId>jboss-json-api_1.0_spec</artifactId>
+                <version>${version.org.jboss.spec.jboss-json-api_1.0_spec}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>javax.json</artifactId>
+                <version>${version.org.glassfish.javax.json}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${version.com.nimbusds.nimbus-jose-jwt}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
