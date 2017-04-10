@@ -25,6 +25,7 @@ import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.jboss.logging.Logger;
 import org.wildfly.security.auth.server.FlexibleIdentityAssociation;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityDomain;
@@ -50,6 +51,8 @@ import io.undertow.server.HttpServerExchange;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class SecurityContextImpl extends AbstractSecurityContext {
+
+    private static final Logger log = Logger.getLogger("org.wildfly.security.http");
 
     private static final String AUTHENTICATED_PRINCIPAL_KEY = SecurityContextImpl.class.getName() + ".authenticated-principal";
 
@@ -96,6 +99,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         try {
             return authenticator.authenticate();
         } catch (HttpAuthenticationException e) {
+            log.trace("Authentication failed.", e);
             exchange.setStatusCode(INTERNAL_SERVER_ERROR);
 
             return false;
