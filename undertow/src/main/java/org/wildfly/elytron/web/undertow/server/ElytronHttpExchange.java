@@ -54,14 +54,12 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.RenegotiationRequiredException;
 import io.undertow.server.SSLSessionInfo;
-import io.undertow.server.ServerConnection;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
 import io.undertow.server.handlers.form.FormData;
 import io.undertow.server.handlers.form.FormData.FormValue;
 import io.undertow.server.handlers.form.FormDataParser;
 import io.undertow.server.handlers.form.FormParserFactory;
-import io.undertow.server.protocol.http.HttpServerConnection;
 import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionConfig;
 import io.undertow.server.session.SessionManager;
@@ -118,11 +116,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
      */
     @Override
     public SSLSession getSSLSession() {
-        ServerConnection connection = httpServerExchange.getConnection();
-        if (connection instanceof HttpServerConnection) {
-            return ((HttpServerConnection) connection).getSslSession();
-        }
-        return null;
+        return httpServerExchange.getConnection().getSslSession();
     }
 
     @Override
