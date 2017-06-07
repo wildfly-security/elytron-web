@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.http.HttpStatus;
@@ -154,8 +155,8 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
             }
 
             @Override
-            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
-                return delegate.getCredentialAcquireSupport(credentialType, algorithmName);
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
+                return delegate.getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec);
             }
 
             @Override

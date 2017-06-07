@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -155,8 +156,8 @@ public class FormAuthenticationTest extends AbstractHttpServerMechanismTest {
             }
 
             @Override
-            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
-                return delegate.getCredentialAcquireSupport(credentialType, algorithmName);
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec algorithmParameterSpec) throws RealmUnavailableException {
+                return delegate.getCredentialAcquireSupport(credentialType, algorithmName, algorithmParameterSpec);
             }
 
             @Override
