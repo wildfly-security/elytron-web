@@ -37,7 +37,7 @@
     <description>Integration project for integrating Elytron based HTTP authentication with web containers.</description>
 
     <properties>
-        <version.org.wildfly.security.elytron>1.1.0.Beta36</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.1.0.Beta51</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.2.0.Beta6</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5.2</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
