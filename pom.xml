@@ -36,6 +36,13 @@
     <name>WildFly Elytron Web - Parent</name>
     <description>Integration project for integrating Elytron based HTTP authentication with web containers.</description>
 
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
     <properties>
         <version.org.wildfly.security.elytron>1.1.0.CR1</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.2.0.CR1</version.org.wildfly.common>

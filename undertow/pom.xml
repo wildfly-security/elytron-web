@@ -35,6 +35,13 @@
     <name>WildFly Elytron Web - Undertow Integration</name>
     <description>Integration project for integrating Elytron based HTTP authentication with Undertow.</description>
 
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
     <properties>
         <version.io.undertow>1.4.18.Final</version.io.undertow>
     </properties>
