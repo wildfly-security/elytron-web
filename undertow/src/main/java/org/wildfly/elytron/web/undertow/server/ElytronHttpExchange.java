@@ -403,17 +403,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         SessionConfig sessionConfig = getSessionConfig();
 
         if (sessionManager == null || sessionConfig == null) {
-            return new HttpScope() {
-                @Override
-                public boolean exists() {
-                    return false;
-                }
-
-                @Override
-                public boolean create() {
-                    return false;
-                }
-            };
+            return null;
         }
 
         return new HttpScope() {
