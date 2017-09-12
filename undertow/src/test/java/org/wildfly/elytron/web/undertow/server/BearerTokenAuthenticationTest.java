@@ -38,6 +38,7 @@ import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.token.TokenSecurityRealm;
 import org.wildfly.security.auth.realm.token.validator.JwtValidator;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.http.HttpConstants;
 import org.wildfly.security.permission.PermissionVerifier;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -63,6 +64,7 @@ public class BearerTokenAuthenticationTest extends AbstractHttpServerMechanismTe
         HttpGet get = new HttpGet(server.createUri());
         HttpResponse result = httpClient.execute(get);
         assertEquals(StatusCodes.UNAUTHORIZED, result.getStatusLine().getStatusCode());
+        assertEquals("Bearer realm=\"Elytron Realm\"", result.getFirstHeader(HttpConstants.WWW_AUTHENTICATE).getValue());
     }
 
     @Test
