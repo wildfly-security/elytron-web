@@ -20,24 +20,16 @@ package org.wildfly.elytron.web.undertow.server;
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.jboss.logging.Logger;
 import org.wildfly.security.auth.server.FlexibleIdentityAssociation;
-import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
-import org.wildfly.security.auth.server.ServerAuthenticationContext;
-import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
-import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
-import org.wildfly.security.http.Scope;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
@@ -54,21 +46,23 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
     private static final Logger log = Logger.getLogger("org.wildfly.security.http");
 
-    private static final String AUTHENTICATED_PRINCIPAL_KEY = SecurityContextImpl.class.getName() + ".authenticated-principal";
+    private final ElytronHttpExchange httpExchange;
 
-    private final String programaticMechanismName;
     private final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
-    private final ElytronHttpExchange httpExchange;
-    private Runnable logoutHandler;
+    private final String programmaticMechanismName;
+
     private final FlexibleIdentityAssociation flexibleIdentityAssociation;
+
+    private HttpAuthenticator httpAuthenticator;
+    private Runnable logoutHandler;
 
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
-        this.programaticMechanismName = checkNotNullParam("programaticMechanismName", builder.programaticMechanismName);
-        this.securityDomain = builder.securityDomain;
-        this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
+        this.securityDomain = builder.securityDomain;
+        this.mechanismSupplier = builder.mechanismSupplier;
+        this.programmaticMechanismName = builder.programmaticMechanismName;
         if(securityDomain != null) {
             this.flexibleIdentityAssociation = securityDomain.getAnonymousSecurityIdentity().createFlexibleAssociation();
         } else {
@@ -81,15 +75,14 @@ public class SecurityContextImpl extends AbstractSecurityContext {
      */
     @Override
     public boolean authenticate() {
-        if(isAuthenticated()) {
-            return true;
-        }
-        if (restoreIdentity()) {
+        if (isAuthenticated()) {
             return true;
         }
 
-        HttpAuthenticator authenticator = HttpAuthenticator.builder()
-                .setMechanismSupplier(mechanismSupplier)
+        this.httpAuthenticator = HttpAuthenticator.builder()
+                .setMechanismSupplier(checkNotNullParam("mechanismSupplier", mechanismSupplier))
+                .setProgrammaticMechanismName(checkNotNullParam("programmaticMechanismName", programmaticMechanismName))
+                .setSecurityDomain(securityDomain)
                 .setHttpExchangeSpi(this.httpExchange)
                 .setRequired(isAuthenticationRequired())
                 .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
@@ -97,7 +90,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
                 .build();
 
         try {
-            return authenticator.authenticate();
+            return httpAuthenticator.authenticate();
         } catch (HttpAuthenticationException e) {
             log.trace("Authentication failed.", e);
             exchange.setStatusCode(INTERNAL_SERVER_ERROR);
@@ -115,49 +108,17 @@ public class SecurityContextImpl extends AbstractSecurityContext {
      */
     @Override
     public boolean login(String username, String password) {
-        if (securityDomain == null) {
+        if (httpAuthenticator == null) {
+            log.trace("No HttpAuthenticator available for authentication.");
             return false;
         }
 
-        ServerAuthenticationContext authenticationContext;
-        if(WildFlySecurityManager.isChecking()) {
-            authenticationContext = AccessController.doPrivileged((PrivilegedAction<ServerAuthenticationContext>) () -> securityDomain.createNewAuthenticationContext());
-        } else {
-            authenticationContext = securityDomain.createNewAuthenticationContext();
+        SecurityIdentity securityIdentity = httpAuthenticator.login(username, password);
+        if (securityIdentity != null) {
+            flexibleIdentityAssociation.setIdentity(securityIdentity);
         }
 
-        final PasswordGuessEvidence evidence = new PasswordGuessEvidence(password.toCharArray());
-
-        try {
-            authenticationContext.setAuthenticationName(username);
-            if (authenticationContext.verifyEvidence(evidence)) {
-                if (authenticationContext.authorize()) {
-                    SecurityIdentity authorizedIdentity = authenticationContext.getAuthorizedIdentity();
-                    if(flexibleIdentityAssociation != null) {
-                        flexibleIdentityAssociation.setIdentity(authorizedIdentity);
-                    }
-                    HttpScope sessionScope = httpExchange.getScope(Scope.SESSION);
-                    if (sessionScope != null && sessionScope.supportsAttachments()) {
-                        sessionScope.setAttachment(AUTHENTICATED_PRINCIPAL_KEY, username);
-                    }
-                    setupProgramaticLogout(sessionScope);
-
-                    authenticationComplete(new ElytronAccount(authorizedIdentity), programaticMechanismName, false);
-
-                    return true;
-                } else {
-                    authenticationFailed("Authorization Failed", programaticMechanismName);
-                }
-            } else {
-                authenticationFailed("Authentication Failed", programaticMechanismName);
-            }
-        } catch (IllegalArgumentException | RealmUnavailableException | IllegalStateException e) {
-            authenticationFailed(e.getMessage(), programaticMechanismName);
-        } finally {
-            evidence.destroy();
-        }
-
-        return false;
+        return securityIdentity != null;
     }
 
     @Override
@@ -169,36 +130,6 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         if(flexibleIdentityAssociation != null) {
             flexibleIdentityAssociation.setIdentity(securityDomain.getAnonymousSecurityIdentity());
         }
-    }
-
-    private boolean restoreIdentity() {
-        if (securityDomain == null) {
-            return false;
-        }
-
-        HttpScope sessionScope = httpExchange.getScope(Scope.SESSION);
-        if (sessionScope != null && sessionScope.supportsAttachments()) {
-            String principalName = sessionScope.getAttachment(AUTHENTICATED_PRINCIPAL_KEY, String.class);
-            if (principalName != null) {
-                ServerAuthenticationContext authenticationContext = securityDomain.createNewAuthenticationContext();
-                try {
-                    authenticationContext.setAuthenticationName(principalName);
-                    if (authenticationContext.authorize()) {
-                        SecurityIdentity authorizedIdentity = authenticationContext.getAuthorizedIdentity();
-                        authenticationComplete(new ElytronAccount(authorizedIdentity), programaticMechanismName, false);
-                        setupProgramaticLogout(sessionScope);
-
-                        return true;
-                    } else {
-                        sessionScope.setAttachment(AUTHENTICATED_PRINCIPAL_KEY, null); // Whatever was in there no longer works so just drop it.
-                    }
-                } catch (IllegalArgumentException | RealmUnavailableException | IllegalStateException e) {
-                    authenticationFailed(e.getMessage(), programaticMechanismName);
-                }
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -225,12 +156,6 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         throw new UnsupportedOperationException();
     }
 
-    private void setupProgramaticLogout(HttpScope sessionScope) {
-        logoutHandler = () -> {
-            sessionScope.setAttachment(AUTHENTICATED_PRINCIPAL_KEY, null);
-        };
-    }
-
     FlexibleIdentityAssociation getFlexibleIdentityAssociation() {
         return flexibleIdentityAssociation;
     }
@@ -242,7 +167,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     static class Builder {
 
         HttpServerExchange exchange;
-        String programaticMechanismName;
+        String programmaticMechanismName;
         SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         ElytronHttpExchange httpExchange;
@@ -256,8 +181,13 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return this;
         }
 
-        Builder setProgramaticMechanismName(final String programaticMechanismName) {
-            this.programaticMechanismName = programaticMechanismName;
+        @Deprecated
+        Builder setProgramaticMechanismName(final String programmaticMechanismName) {
+            return this.setProgrammaticMechanismName(programmaticMechanismName);
+        }
+
+        Builder setProgrammaticMechanismName(final String programmaticMechanismName) {
+            this.programmaticMechanismName = programmaticMechanismName;
 
             return this;
         }
