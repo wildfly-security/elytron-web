@@ -140,7 +140,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
     }
 
     /**
-     * @see org.wildfly.security.http.HttpExchangeSpi#authenticationComplete(org.wildfly.security.auth.spi.AuthenticatedRealmIdentity, java.lang.String)
+     * @see org.wildfly.security.http.HttpExchangeSpi#authenticationComplete(SecurityIdentity, String)
      */
     @Override
     public void authenticationComplete(SecurityIdentity securityIdentity, String mechanismName) {
@@ -151,7 +151,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
     }
 
     /**
-     * @see org.wildfly.security.http.HttpExchangeSpi#authenticationFailed(java.lang.String, java.lang.String)
+     * @see org.wildfly.security.http.HttpExchangeSpi#authenticationFailed(String, String)
      */
     @Override
     public void authenticationFailed(String message, String mechanismName) {
@@ -229,7 +229,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                             }
 
                             StreamSupport
-                                    .stream(data.spliterator(), true)
+                                    .stream(data.spliterator(), false)
                                     .filter((String s) -> parameters.containsKey(s) == false)
                                     .forEach(
                                             (String s) -> parameters.put(s,
