@@ -76,7 +76,7 @@ public class ScopeSessionListener implements SessionListener {
             return;
         }
 
-        consumersForSession.forEach((Consumer<HttpScopeNotification> c) -> c.accept(new HttpScopeNotification() {
+        HttpScopeNotification scopeNotification = new HttpScopeNotification() {
             @Override
             public boolean isOfType(Enum... notification) {
                 for (Enum type : notification) {
@@ -147,7 +147,11 @@ public class ScopeSessionListener implements SessionListener {
             public HttpScope getScope(Scope scope, String id) {
                 return null;
             }
-        }));
+        };
+
+        for (Consumer<HttpScopeNotification> consumer : consumersForSession) {
+            consumer.accept(scopeNotification);
+        }
     }
 
     public static Builder builder() {
