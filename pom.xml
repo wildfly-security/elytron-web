@@ -72,6 +72,7 @@
 
     <modules>
         <module>undertow</module>
+        <module>undertow-servlet</module>
     </modules>
 
     <build>
@@ -199,6 +200,19 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- 
+                  Elytron Web Dependencies
+             -->
+
+             <dependency>
+                 <groupId>org.wildfly.security.elytron-web</groupId>
+                 <artifactId>undertow-server</artifactId>
+                 <version>${project.version}</version>
+             </dependency>
+
+             <!-- 
+                  External Dependencies
+              -->
 
             <dependency>
                 <groupId>org.jboss.logging</groupId>
