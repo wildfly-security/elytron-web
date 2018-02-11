@@ -21,6 +21,7 @@ import static org.wildfly.security.http.HttpConstants.OK;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -56,6 +57,8 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
 
     private final HttpServerExchange httpServerExchange;
     private final ScopeSessionListener scopeSessionListener;
+
+    static Function<HttpServerExchange, HttpScope> APPLICATION_SCOPE_RESOLVER = ElytronHttpServletExchange::applicationScope;
 
     protected ElytronHttpServletExchange(final HttpServerExchange httpServerExchange, final ScopeSessionListener scopeSessionListener) {
         super(httpServerExchange);
@@ -129,7 +132,7 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
         }
     }
 
-    static HttpScope applicationScope(HttpServerExchange exchange) {
+    private static HttpScope applicationScope(HttpServerExchange exchange) {
         ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
 
         if (servletRequestContext != null) {
