@@ -146,7 +146,12 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
     public void authenticationComplete(SecurityIdentity securityIdentity, String mechanismName) {
         SecurityContext securityContext = httpServerExchange.getSecurityContext();
         if (securityContext != null) {
-            securityContext.authenticationComplete(new ElytronAccount(securityIdentity), mechanismName, false);
+            if (securityContext instanceof SecurityContextImpl) {
+                ((SecurityContextImpl) securityContext).authenticationComplete(new ElytronAccount(securityIdentity),
+                        securityIdentity, mechanismName);
+            } else {
+                securityContext.authenticationComplete(new ElytronAccount(securityIdentity), mechanismName, false);
+            }
         }
     }
 

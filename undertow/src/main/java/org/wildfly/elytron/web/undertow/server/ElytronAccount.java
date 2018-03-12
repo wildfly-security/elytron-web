@@ -36,12 +36,12 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 public class ElytronAccount implements Account {
 
-    private final SecurityIdentity securityIdentity;
+    private final Principal principal;
     private final Set<String> roles;
 
     ElytronAccount(final SecurityIdentity securityIdentity) {
         checkNotNullParam("securityIdentity", securityIdentity);
-        this.securityIdentity = securityIdentity;
+        this.principal = securityIdentity.getPrincipal();
         this.roles = Collections.unmodifiableSet(
                 StreamSupport.stream(securityIdentity.getRoles().spliterator(), false).collect(Collectors.toSet()));
     }
@@ -51,7 +51,7 @@ public class ElytronAccount implements Account {
      */
     @Override
     public Principal getPrincipal() {
-        return securityIdentity.getPrincipal();
+        return principal;
     }
 
     /**
@@ -60,15 +60,6 @@ public class ElytronAccount implements Account {
     @Override
     public Set<String> getRoles() {
         return roles;
-    }
-
-    /**
-     * Get the {@link SecurityIdentity} wrapped by this {@link Account}.
-     *
-     * @return the {@link SecurityIdentity} wrapped by this {@link Account}.
-     */
-    SecurityIdentity getSecurityIdentity() {
-        return securityIdentity;
     }
 
 }

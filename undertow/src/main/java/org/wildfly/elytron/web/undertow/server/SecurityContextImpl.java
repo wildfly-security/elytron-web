@@ -23,6 +23,7 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 import java.util.List;
 import java.util.function.Supplier;
 
+import io.undertow.security.idm.Account;
 import org.jboss.logging.Logger;
 import org.wildfly.security.auth.server.FlexibleIdentityAssociation;
 import org.wildfly.security.auth.server.SecurityDomain;
@@ -56,6 +57,8 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
     private HttpAuthenticator httpAuthenticator;
     private Runnable logoutHandler;
+
+    private SecurityIdentity securityIdentity;
 
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
@@ -124,12 +127,22 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     @Override
     public void logout() {
         super.logout();
+        securityIdentity = null;
         if (logoutHandler != null) {
             logoutHandler.run();
         }
         if(flexibleIdentityAssociation != null) {
             flexibleIdentityAssociation.setIdentity(securityDomain.getAnonymousSecurityIdentity());
         }
+    }
+
+    void authenticationComplete(Account account, SecurityIdentity identity, String mechanism) {
+        super.authenticationComplete(account, mechanism, false, false);
+        securityIdentity = identity;
+    }
+
+    SecurityIdentity getSecurityIdentity() {
+        return securityIdentity;
     }
 
     /**
