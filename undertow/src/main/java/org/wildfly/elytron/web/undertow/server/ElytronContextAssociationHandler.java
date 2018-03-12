@@ -32,23 +32,20 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 
 /**
- *
+ * An {@link HttpHandler} responsible for associating the {@link SecurityContextImpl} instance with the current request.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class ElytronContextAssociationHandler extends AbstractSecurityContextAssociationHandler {
 
-    private final String programaticMechanismName;
+    private final String programmaticMechanismName;
     private final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier;
 
-    /**
-     * @param next
-     */
     private ElytronContextAssociationHandler(Builder builder) {
         super(checkNotNullParam("next", builder.next));
-        this.programaticMechanismName = builder.programaticMechanismName != null ? builder.programaticMechanismName : "Programatic";
+        this.programmaticMechanismName = builder.programmaticMechanismName != null ? builder.programmaticMechanismName : "Programmatic";
         this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchangeSupplier = checkNotNullParam("httpExchangeSupplier", builder.httpExchangeSupplier);
@@ -61,7 +58,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     public SecurityContext createSecurityContext(HttpServerExchange exchange) {
         return SecurityContextImpl.builder()
                 .setExchange(exchange)
-                .setProgramaticMechanismName(programaticMechanismName)
+                .setProgrammaticMechanismName(programmaticMechanismName)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(mechanismSupplier)
                 .setHttpExchangeSupplier(this.httpExchangeSupplier.apply(exchange))
@@ -75,7 +72,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     public static class Builder {
 
         HttpHandler next;
-        String programaticMechanismName;
+        String programmaticMechanismName;
         SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
@@ -89,8 +86,13 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
             return this;
         }
 
+        @Deprecated
         public Builder setProgramaticMechanismName(final String programaticMechanismName) {
-            this.programaticMechanismName = programaticMechanismName;
+            return this.setProgrammaticMechanismName(programaticMechanismName);
+        }
+
+        public Builder setProgrammaticMechanismName(final String programmaticMechanismName) {
+            this.programmaticMechanismName = programmaticMechanismName;
 
             return this;
         }
