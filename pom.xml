@@ -45,7 +45,7 @@
 
     <properties>
         <version.org.wildfly.security.elytron>1.2.0.Final</version.org.wildfly.security.elytron>
-        <version.org.wildfly.common>1.2.0.Final</version.org.wildfly.common>
+        <version.org.wildfly.common>1.4.0.Final</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5.2</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
         <version.org.jboss.logging>3.3.1.Final</version.org.jboss.logging>
