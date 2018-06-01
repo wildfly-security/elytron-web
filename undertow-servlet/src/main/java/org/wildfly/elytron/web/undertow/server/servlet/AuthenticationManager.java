@@ -37,7 +37,6 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import org.jboss.metadata.javaee.jboss.RunAsIdentityMetaData;
-import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
 import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
 import org.wildfly.elytron.web.undertow.server.ScopeSessionListener;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
@@ -162,7 +161,10 @@ public class AuthenticationManager {
             }
         }
 
-        return ElytronContextAssociationHandler.builder()
+        final String applicationContext = deploymentInfo.getHostName() + " " + deploymentInfo.getContextPath();
+
+        return ElytronServletContextAssociationHandler.builder()
+                .setApplicationContext(applicationContext)
                 .setNext(toWrap)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(() -> getAuthenticationMechanisms(selectedMechanisms))
