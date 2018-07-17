@@ -46,7 +46,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     /**
      * @param next
      */
-    private ElytronContextAssociationHandler(Builder builder) {
+    protected ElytronContextAssociationHandler(Builder builder) {
         super(checkNotNullParam("next", builder.next));
         this.programaticMechanismName = builder.programaticMechanismName != null ? builder.programaticMechanismName : "Programatic";
         this.securityDomain = builder.securityDomain;
@@ -59,13 +59,16 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
      */
     @Override
     public SecurityContext createSecurityContext(HttpServerExchange exchange) {
-        return SecurityContextImpl.builder()
-                .setExchange(exchange)
+        return populateSecurityContextBuilder(SecurityContextImpl.builder(), exchange)
+                .build();
+    }
+
+    protected SecurityContextImpl.Builder populateSecurityContextBuilder(SecurityContextImpl.Builder builder, HttpServerExchange exchange) {
+        return builder.setExchange(exchange)
                 .setProgramaticMechanismName(programaticMechanismName)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(mechanismSupplier)
-                .setHttpExchangeSupplier(this.httpExchangeSupplier.apply(exchange))
-                .build();
+                .setHttpExchangeSupplier(this.httpExchangeSupplier.apply(exchange));
     }
 
     public static Builder builder() {
@@ -80,7 +83,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
 
-        private Builder() {
+        protected Builder() {
         }
 
         public Builder setNext(HttpHandler next) {

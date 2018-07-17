@@ -48,7 +48,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final ElytronHttpExchange httpExchange;
 
-    private final SecurityDomain securityDomain;
+    protected final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final String programmaticMechanismName;
 
@@ -57,7 +57,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private HttpAuthenticator httpAuthenticator;
     private Runnable logoutHandler;
 
-    private SecurityContextImpl(Builder builder) {
+    protected SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
         this.securityDomain = builder.securityDomain;
@@ -132,6 +132,10 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
     }
 
+    protected void authenticationComplete(SecurityIdentity securityIdentity, String mechanism) {
+        authenticationComplete(new ElytronAccount(securityIdentity), mechanism, false);
+    }
+
     /**
      * @see io.undertow.security.api.SecurityContext#addAuthenticationMechanism(io.undertow.security.api.AuthenticationMechanism)
      */
@@ -164,7 +168,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         return new Builder();
     }
 
-    static class Builder {
+    public static class Builder {
 
         HttpServerExchange exchange;
         String programmaticMechanismName;
@@ -172,7 +176,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         ElytronHttpExchange httpExchange;
 
-        private Builder() {
+        protected Builder() {
         }
 
         Builder setExchange(HttpServerExchange exchange) {
@@ -210,7 +214,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return this;
         }
 
-        SecurityContext build() {
+        public SecurityContext build() {
             return new SecurityContextImpl(this);
         }
     }
