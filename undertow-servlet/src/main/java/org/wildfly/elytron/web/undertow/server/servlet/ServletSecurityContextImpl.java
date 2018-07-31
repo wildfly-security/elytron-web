@@ -33,8 +33,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jboss.logging.Logger;
 import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
-import org.wildfly.security.auth.jaspi.JaspiAuthenticationContext;
-import org.wildfly.security.auth.jaspi.servlet.ServletMessageInfo;
+import org.wildfly.security.auth.jaspi.impl.JaspiAuthenticationContext;
+import org.wildfly.security.auth.jaspi.impl.ServletMessageInfo;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 import io.undertow.security.api.SecurityContext;
