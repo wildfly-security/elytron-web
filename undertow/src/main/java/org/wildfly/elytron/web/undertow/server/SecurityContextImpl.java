@@ -40,6 +40,7 @@ import org.wildfly.security.http.Scope;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.IdentityManager;
 import io.undertow.security.impl.AbstractSecurityContext;
@@ -63,12 +64,15 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private Runnable logoutHandler;
     private final FlexibleIdentityAssociation flexibleIdentityAssociation;
 
+    private AuthenticationMode authMode;
+
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.programaticMechanismName = checkNotNullParam("programaticMechanismName", builder.programaticMechanismName);
         this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
+        this.authMode = builder.authMode;
         if(securityDomain != null) {
             this.flexibleIdentityAssociation = securityDomain.getAnonymousSecurityIdentity().createFlexibleAssociation();
         } else {
@@ -81,7 +85,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
      */
     @Override
     public boolean authenticate() {
-        if(isAuthenticated()) {
+        if (isAuthenticated() || (this.authMode == AuthenticationMode.CONSTRAINT_DRIVEN && !isAuthenticationRequired())) {
             return true;
         }
         if (restoreIdentity()) {
@@ -246,6 +250,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         ElytronHttpExchange httpExchange;
+        AuthenticationMode authMode;
 
         private Builder() {
         }
@@ -259,6 +264,11 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         Builder setProgramaticMechanismName(final String programaticMechanismName) {
             this.programaticMechanismName = programaticMechanismName;
 
+            return this;
+        }
+
+        public Builder setAuthMode(AuthenticationMode authMode) {
+            this.authMode = authMode;
             return this;
         }
 
