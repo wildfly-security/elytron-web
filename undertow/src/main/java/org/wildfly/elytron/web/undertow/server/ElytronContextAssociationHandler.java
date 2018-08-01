@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 
+import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.handlers.AbstractSecurityContextAssociationHandler;
 import io.undertow.server.HttpHandler;
@@ -42,6 +43,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     private final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier;
+    private final AuthenticationMode authenticationMode;
 
     /**
      * @param next
@@ -52,6 +54,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchangeSupplier = checkNotNullParam("httpExchangeSupplier", builder.httpExchangeSupplier);
+        this.authenticationMode = builder.authenticationMode;
     }
 
     /**
@@ -64,6 +67,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
                 .setProgramaticMechanismName(programaticMechanismName)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(mechanismSupplier)
+                .setAuthMode(authenticationMode)
                 .setHttpExchangeSupplier(this.httpExchangeSupplier.apply(exchange))
                 .build();
     }
@@ -79,6 +83,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
+        AuthenticationMode authenticationMode;
 
         private Builder() {
         }
@@ -110,6 +115,11 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         public Builder setHttpExchangeSupplier(Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier) {
             this.httpExchangeSupplier = httpExchangeSupplier;
 
+            return this;
+        }
+
+        public Builder setAuthenticationMode(AuthenticationMode authMode) {
+            this.authenticationMode = authMode;
             return this;
         }
 
