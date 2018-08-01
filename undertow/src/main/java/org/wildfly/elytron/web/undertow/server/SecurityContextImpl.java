@@ -32,6 +32,7 @@ import org.wildfly.security.http.HttpAuthenticator;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 
 import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.IdentityManager;
 import io.undertow.security.impl.AbstractSecurityContext;
@@ -57,11 +58,14 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private HttpAuthenticator httpAuthenticator;
     private Runnable logoutHandler;
 
+    private AuthenticationMode authMode;
+
     private SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
         this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = builder.mechanismSupplier;
+        this.authMode = builder.authMode;
         this.programmaticMechanismName = builder.programmaticMechanismName;
         if(securityDomain != null) {
             this.flexibleIdentityAssociation = securityDomain.getAnonymousSecurityIdentity().createFlexibleAssociation();
@@ -75,7 +79,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
      */
     @Override
     public boolean authenticate() {
-        if (isAuthenticated()) {
+        if (isAuthenticated() || (this.authMode == AuthenticationMode.CONSTRAINT_DRIVEN && !isAuthenticationRequired())) {
             return true;
         }
 
@@ -171,6 +175,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         ElytronHttpExchange httpExchange;
+        AuthenticationMode authMode;
 
         private Builder() {
         }
@@ -189,6 +194,11 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         Builder setProgrammaticMechanismName(final String programmaticMechanismName) {
             this.programmaticMechanismName = programmaticMechanismName;
 
+            return this;
+        }
+
+        public Builder setAuthMode(AuthenticationMode authMode) {
+            this.authMode = authMode;
             return this;
         }
 
