@@ -28,9 +28,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.undertow.Handlers;
+import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.handlers.AuthenticationCallHandler;
 import io.undertow.security.handlers.AuthenticationConstraintHandler;
 import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.BlockingHandler;
 import io.undertow.server.handlers.PathHandler;
 import io.undertow.server.session.SessionAttachmentHandler;
@@ -91,6 +93,30 @@ public abstract class AbstractHttpServerMechanismTest {
         assertEquals(expectedUserName, values[0].getValue());
     }
 
+    protected void assertSuccessfulUnconstraintResponse(HttpResponse result, String expectedUserName) {
+        Header[] values;
+        values = result.getHeaders("ProcessedBy");
+        assertEquals(1, values.length);
+        assertEquals("ResponseHandler", values[0].getValue());
+
+        if (expectedUserName != null) {
+            values = result.getHeaders("UndertowUser");
+            assertEquals(1, values.length);
+            assertEquals(expectedUserName, values[0].getValue());
+
+            values = result.getHeaders("ElytronUser");
+            assertEquals(1, values.length);
+            assertEquals(expectedUserName, values[0].getValue());
+        } else {
+            values = result.getHeaders("UndertowUser");
+            assertEquals(0, values.length);
+
+            values = result.getHeaders("ElytronUser");
+            assertEquals(1, values.length);
+            assertEquals("anonymous", values[0].getValue());
+        }
+    }
+
     protected void assertLoginPage(HttpResponse response) throws Exception {
         assertTrue(EntityUtils.toString(response.getEntity()).contains("Login Page"));
     }
@@ -136,6 +162,10 @@ public abstract class AbstractHttpServerMechanismTest {
     }
 
     protected HttpHandler createRootHttpHandler(SessionManager sessionManager) {
+        return createRootHttpHandler(sessionManager, null);
+    }
+
+    protected HttpHandler createRootHttpHandler(SessionManager sessionManager, AuthenticationMode authenticationMode) {
         try {
             String deploymentName = (sessionManager != null) ? sessionManager.getDeploymentName() : null;
             String contextPath = (deploymentName != null) ? "/" + deploymentName : "";
@@ -145,9 +175,19 @@ public abstract class AbstractHttpServerMechanismTest {
 
             rootHandler = new BlockingHandler(rootHandler);
             rootHandler = new AuthenticationCallHandler(rootHandler);
-            rootHandler = new AuthenticationConstraintHandler(rootHandler);
+            rootHandler = new AuthenticationConstraintHandler(rootHandler) {
+                @Override
+                protected boolean isAuthenticationRequired(HttpServerExchange exchange) {
+                    if (exchange.getRelativePath().equals("/unsecure")) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+            };
             ElytronContextAssociationHandler.Builder elytronContextHandlerBuilder = ElytronContextAssociationHandler.builder()
                     .setNext(rootHandler)
+                    .setAuthenticationMode(authenticationMode)
                     .setMechanismSupplier(() -> httpAuthenticationFactory.getMechanismNames().stream()
                             .map(mechanismName -> {
                                 try {
