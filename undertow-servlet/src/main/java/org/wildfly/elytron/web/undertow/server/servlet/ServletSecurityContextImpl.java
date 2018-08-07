@@ -50,7 +50,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
     private static final String SERVLET_MESSAGE_LAYER = "HttpServlet";
 
-    private final boolean enableJaspic;
+    private final boolean enableJaspi;
     private final String applicationContext;
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
@@ -62,7 +62,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     ServletSecurityContextImpl(Builder builder) {
         super(builder);
 
-        this.enableJaspic = builder.enableJaspic;
+        this.enableJaspi = builder.enableJaspi;
         this.applicationContext = builder.applicationContext;
         this.httpServletRequest = builder.httpServletRequest;
         this.httpServletResponse = builder.httpServletResponse;
@@ -75,7 +75,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         }
 
         // If JASPIC do JASPIC
-        if (enableJaspic) {
+        if (enableJaspi) {
             AuthConfigFactory authConfigFactory = getAuthConfigFactory();
             if (authConfigFactory != null) {
                 AuthConfigProvider configProvider = authConfigFactory.getConfigProvider(SERVLET_MESSAGE_LAYER, applicationContext, null);
@@ -171,13 +171,13 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
     static class Builder extends org.wildfly.elytron.web.undertow.server.SecurityContextImpl.Builder {
 
-        private boolean enableJaspic = true;
+        private boolean enableJaspi = true;
         private String applicationContext;
         private HttpServletRequest httpServletRequest;
         private HttpServletResponse httpServletResponse;
 
-        Builder setEnableJaspic(boolean enableJaspic) {
-            this.enableJaspic = enableJaspic;
+        Builder setEnableJaspi(boolean enableJaspi) {
+            this.enableJaspi = enableJaspi;
 
             return this;
         }
