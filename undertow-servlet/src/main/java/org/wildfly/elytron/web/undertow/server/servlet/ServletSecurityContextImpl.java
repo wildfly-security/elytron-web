@@ -66,6 +66,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         this.applicationContext = builder.applicationContext;
         this.httpServletRequest = builder.httpServletRequest;
         this.httpServletResponse = builder.httpServletResponse;
+        log.tracef("Created ServletSecurityContextImpl enableJapi=%b, applicationContext=%s", enableJaspi, applicationContext);
     }
 
     @Override
@@ -74,7 +75,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
             return true;
         }
 
-        // If JASPIC do JASPIC
+        // If JASPI do JASPI
         if (enableJaspi) {
             AuthConfigFactory authConfigFactory = getAuthConfigFactory();
             if (authConfigFactory != null) {
@@ -96,7 +97,6 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
             }
         }
 
-        // else
         log.trace("JASPIC Unavailable, using HTTP authentication.");
         return super.authenticate();
     }
@@ -114,7 +114,6 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     }
 
     private boolean authenticate(AuthConfigProvider authConfigProvider) throws AuthException, SecurityException {
-        System.out.println("Performing JASPIC authentication");
         // TODO This seems a reasonable place to restore any JASPIC identity associated with the session, i.e. if we would not
         // handle JASPIC then default auth would handle cached identities.
 
@@ -141,15 +140,15 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         final ServerAuthContext serverAuthContext = serverAuthConfig.getAuthContext(authContextId, null, Collections.emptyMap());
 
         if (serverAuthContext == null) {
-            log.trace("No ServerAuthContext returned, JASPIC authentication can not proceed.");
+            log.trace("No ServerAuthContext returned, JASPI authentication can not proceed.");
             return false;
         }
 
         final Subject clientSubject = new Subject();
         AuthStatus authStatus = serverAuthContext.validateRequest(messageInfo, clientSubject, serverSubject);
+        log.tracef("ServerAuthContext.validateRequest returned AuthStatus=%s", authStatus);
         // TODO If SEND_SUCCESS and registerSession DO IT !!
         // TODO 3.8.3.5 If the request / response objects were wrapped we now need to use them.
-
 
         // TODO Take any resulting SecurityIdentity and associate it for later.
         final boolean success = AuthStatus.SUCCESS == authStatus;
@@ -159,9 +158,6 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         }
 
         // TODO We need the secureResponse side of the call as well!.
-
-
-
         return success;
     }
 
