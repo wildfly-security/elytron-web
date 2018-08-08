@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.authz.Roles;
 
 /**
  * A wrapper around {@link SecurityIdentity} to provide an implementation
@@ -39,11 +40,18 @@ public class ElytronAccount implements Account {
     private final SecurityIdentity securityIdentity;
     private final Set<String> roles;
 
-    ElytronAccount(final SecurityIdentity securityIdentity) {
-        checkNotNullParam("securityIdentity", securityIdentity);
+    private ElytronAccount(final SecurityIdentity securityIdentity, final Roles roles) {
         this.securityIdentity = securityIdentity;
         this.roles = Collections.unmodifiableSet(
-                StreamSupport.stream(securityIdentity.getRoles().spliterator(), false).collect(Collectors.toSet()));
+                StreamSupport.stream(roles.spliterator(), false).collect(Collectors.toSet()));
+    }
+
+    ElytronAccount(final SecurityIdentity securityIdentity) {
+        this(checkNotNullParam("securityIdentity", securityIdentity), securityIdentity.getRoles());
+    }
+
+    ElytronAccount(final SecurityIdentity securityIdentity, final String rolesCategory) {
+        this(checkNotNullParam("securityIdentity", securityIdentity), securityIdentity.getRoles(rolesCategory, true));
     }
 
     /**

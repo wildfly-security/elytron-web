@@ -136,6 +136,10 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         authenticationComplete(new ElytronAccount(securityIdentity), mechanism, false);
     }
 
+    protected void authenticationComplete(SecurityIdentity securityIdentity, String mechanism, String rolesCategory) {
+        authenticationComplete(new ElytronAccount(securityIdentity, rolesCategory), mechanism, false);
+    }
+
     /**
      * @see io.undertow.security.api.SecurityContext#addAuthenticationMechanism(io.undertow.security.api.AuthenticationMechanism)
      */
