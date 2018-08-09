@@ -88,6 +88,42 @@ public class BasicAuthenticationTest extends AbstractHttpServerMechanismTest {
         assertUnauthorizedResponse(httpClient.execute(get));
     }
 
+    @Test
+    public void testUnconstrainedAccessWithCorrectPassword() throws Exception {
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpGet get = new HttpGet(server.createUri("/unsecure"));
+
+        get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:Coleoptera".getBytes(), false));
+
+        HttpResponse result = httpClient.execute(get);
+
+        assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
+        assertSuccessfulUnconstraintResponse(result, "elytron");
+    }
+
+    @Test
+    public void testUnconstrainedAccessWithIncorrectPassword() throws Exception {
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpGet get = new HttpGet(server.createUri("/unsecure"));
+
+        get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:bad_password".getBytes(), false));
+
+        HttpResponse result = httpClient.execute(get);
+
+        assertUnauthorizedResponse(result);
+    }
+
+    @Test
+    public void testUnconstrainedAccessWithoutPassword() throws Exception {
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpGet get = new HttpGet(server.createUri("/unsecure"));
+
+        HttpResponse result = httpClient.execute(get);
+
+        assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
+        assertSuccessfulUnconstraintResponse(result, null);
+    }
+
     private void assertUnauthorizedResponse(HttpResponse result) {
         assertEquals(StatusCodes.UNAUTHORIZED, result.getStatusLine().getStatusCode());
 
