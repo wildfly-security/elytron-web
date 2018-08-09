@@ -84,6 +84,9 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
         ServletRequest req = servletRequestContext.getServletRequest();
         ServletResponse resp = servletRequestContext.getServletResponse();
         RequestDispatcher disp = req.getRequestDispatcher(path);
+        if (disp == null) {
+            return super.forward(path);
+        }
 
         final FormResponseWrapper respWrapper = httpServerExchange.getStatusCode() != OK && resp instanceof HttpServletResponse
                 ? new FormResponseWrapper((HttpServletResponse) resp) : null;
