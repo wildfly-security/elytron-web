@@ -165,6 +165,8 @@ public class AuthenticationManager {
 
         return ElytronServletContextAssociationHandler.builder()
                 .setApplicationContext(applicationContext)
+                .setEnableJaspi(builder.enableJaspi)
+                .setIntegratedJaspi(builder.integratedJapi)
                 .setNext(toWrap)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(() -> getAuthenticationMechanisms(selectedMechanisms))
@@ -206,6 +208,8 @@ public class AuthenticationManager {
         private AuthorizationManager authorizationManager;
         private UnaryOperator<HttpServerAuthenticationMechanismFactory> httpAuthenticationFactoryTransformer;
         private Function<String, RunAsIdentityMetaData> runAsMapper;
+        private boolean enableJaspi = true;
+        private boolean integratedJapi = true;
 
         private boolean built = false;
 
@@ -271,6 +275,33 @@ public class AuthenticationManager {
         public Builder setRunAsMapper(final Function<String, RunAsIdentityMetaData> runAsMapper) {
             assertNotBuilt();
             this.runAsMapper = runAsMapper;
+
+            return this;
+        }
+
+        /**
+         * Set if JASPI authentication should be enabled.
+         *
+         * @param enableJaspi if JASPI authentication should be enabled.
+         * @return this {@link Builder}
+         */
+        public Builder setEnableJaspi(final boolean enableJaspi) {
+            assertNotBuilt();
+            this.enableJaspi = enableJaspi;
+
+            return this;
+        }
+
+        /**
+         * Set if JASPI authentication should be integrated with the {@link SecurityDomain}, if not integrated AdHoc identities
+         * will be created instead from the domain.
+         *
+         * @param integratedJaspi if JASPI authentication should be integrated with the {@link SecurityDomain}
+         * @return this {@link Builder}
+         */
+        public Builder setIntegratedJaspi(final boolean integratedJaspi) {
+            assertNotBuilt();
+            this.integratedJapi = integratedJaspi;
 
             return this;
         }

@@ -34,11 +34,15 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 public class ElytronServletContextAssociationHandler extends ElytronContextAssociationHandler {
 
     private final String applicationContext;
+    private final boolean enableJaspi;
+    private final boolean integratedJaspi;
 
     private ElytronServletContextAssociationHandler(Builder builder) {
         super(builder);
 
         this.applicationContext = builder.applicationContext;
+        this.enableJaspi = builder.enableJaspi;
+        this.integratedJaspi = builder.integratedJapi;
     }
 
     @Override
@@ -49,6 +53,8 @@ public class ElytronServletContextAssociationHandler extends ElytronContextAssoc
 
         return populateSecurityContextBuilder(ServletSecurityContextImpl.builder()
                 .setApplicationContext(applicationContext)
+                .setEnableJaspi(enableJaspi)
+                .setIntegratedJaspi(integratedJaspi)
                 .setHttpServletRequest(httpServletRequest)
                 .setHttpServletResponse(httpServletResponse)
                 , exchange).build();
@@ -61,6 +67,20 @@ public class ElytronServletContextAssociationHandler extends ElytronContextAssoc
     public static class Builder extends org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler.Builder {
 
         private String applicationContext;
+        private boolean enableJaspi = true;
+        private boolean integratedJapi = true;
+
+        public Builder setEnableJaspi(final boolean enableJaspi) {
+            this.enableJaspi = enableJaspi;
+
+            return this;
+        }
+
+        public Builder setIntegratedJaspi(final boolean integratedJaspi) {
+            this.integratedJapi = integratedJaspi;
+
+            return this;
+        }
 
         public Builder setApplicationContext(final String applicationContext) {
             this.applicationContext = applicationContext;

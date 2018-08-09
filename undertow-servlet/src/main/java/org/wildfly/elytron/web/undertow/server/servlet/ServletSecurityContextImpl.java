@@ -51,6 +51,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     private static final String SERVLET_MESSAGE_LAYER = "HttpServlet";
 
     private final boolean enableJaspi;
+    private final boolean integratedJaspi;
     private final String applicationContext;
     private final HttpServletRequest httpServletRequest;
     private final HttpServletResponse httpServletResponse;
@@ -63,6 +64,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         super(builder);
 
         this.enableJaspi = builder.enableJaspi;
+        this.integratedJaspi = builder.integratedJaspi;
         this.applicationContext = builder.applicationContext;
         this.httpServletRequest = builder.httpServletRequest;
         this.httpServletResponse = builder.httpServletResponse;
@@ -120,7 +122,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         // TODO A lot of the initialisation could have happened in advance if it wasn't for the CallbackHandler, maybe
         // we can use some form of contextual handler associated with the thread and a delegate.
 
-        JaspiAuthenticationContext authenticationContext = JaspiAuthenticationContext.newInstance(securityDomain, SERVLET_MESSAGE_LAYER);
+        JaspiAuthenticationContext authenticationContext = JaspiAuthenticationContext.newInstance(securityDomain, SERVLET_MESSAGE_LAYER, integratedJaspi);
 
         // TODO - PermissionCheck
         ServerAuthConfig serverAuthConfig = authConfigProvider.getServerAuthConfig(SERVLET_MESSAGE_LAYER, applicationContext,
@@ -168,12 +170,19 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     static class Builder extends org.wildfly.elytron.web.undertow.server.SecurityContextImpl.Builder {
 
         private boolean enableJaspi = true;
+        private boolean integratedJaspi = true;
         private String applicationContext;
         private HttpServletRequest httpServletRequest;
         private HttpServletResponse httpServletResponse;
 
         Builder setEnableJaspi(boolean enableJaspi) {
             this.enableJaspi = enableJaspi;
+
+            return this;
+        }
+
+        Builder setIntegratedJaspi(boolean integratedJaspi) {
+            this.integratedJaspi = integratedJaspi;
 
             return this;
         }
