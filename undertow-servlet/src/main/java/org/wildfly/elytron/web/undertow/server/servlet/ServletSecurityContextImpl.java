@@ -18,6 +18,7 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import javax.security.auth.message.config.ServerAuthConfig;
 import javax.security.auth.message.config.ServerAuthContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.jboss.logging.Logger;
 import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
@@ -50,7 +52,10 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     private static final Logger log = Logger.getLogger("org.wildfly.security.http.servlet");
 
     private static final String AUTH_TYPE = "javax.servlet.http.authType";
+    private static final String REGISTER_SESSION = "javax.servlet.http.registerSession";
+
     private static final String SERVLET_MESSAGE_LAYER = "HttpServlet";
+    private static final String IDENTITY_KEY = IdentityContainer.class.getName();
 
     private final boolean enableJaspi;
     private final boolean integratedJaspi;
@@ -118,12 +123,24 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     }
 
     private boolean authenticate(AuthConfigProvider authConfigProvider) throws AuthException, SecurityException {
-        // TODO This seems a reasonable place to restore any JASPIC identity associated with the session, i.e. if we would not
-        // handle JASPIC then default auth would handle cached identities.
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session != null) {
+            IdentityContainer identityContainer = (IdentityContainer) session.getAttribute(IDENTITY_KEY);
+            if (identityContainer != null) {
+                SecurityIdentity securityIdentity = identityContainer.getSecurityIdentity();
+                String authType = identityContainer.getAuthType();
+                if (securityIdentity != null) {
+                    log.trace("SecurityIdentity restored from HttpSession");
+                    authenticationComplete(securityIdentity, authType != null ? authType : getMechanismName(), SERVLET_MESSAGE_LAYER);
+                    return true;
+                }
+            } else {
+                session.removeAttribute(IDENTITY_KEY);
+            }
+        }
 
         // TODO A lot of the initialisation could have happened in advance if it wasn't for the CallbackHandler, maybe
         // we can use some form of contextual handler associated with the thread and a delegate.
-
         JaspiAuthenticationContext authenticationContext = JaspiAuthenticationContext.newInstance(securityDomain, SERVLET_MESSAGE_LAYER, integratedJaspi);
 
         // TODO - PermissionCheck
@@ -151,19 +168,27 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         final Subject clientSubject = new Subject();
         AuthStatus authStatus = serverAuthContext.validateRequest(messageInfo, clientSubject, serverSubject);
         log.tracef("ServerAuthContext.validateRequest returned AuthStatus=%s", authStatus);
-        Map options = messageInfo.getMap();
-        // TODO If SEND_SUCCESS and registerSession DO IT !!
-        // TODO 3.8.3.5 If the request / response objects were wrapped we now need to use them.
 
-        final boolean success = AuthStatus.SUCCESS == authStatus;
-        if (success) {
+        Map options = messageInfo.getMap();
+        boolean registerSession = options.containsKey(REGISTER_SESSION) && Boolean.parseBoolean(String.valueOf(options.get(REGISTER_SESSION)));
+        if ((authStatus == AuthStatus.SUCCESS || (authStatus == AuthStatus.SEND_SUCCESS && registerSession))) {
             String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName();
             SecurityIdentity securityIdentity = authenticationContext.getAuthorizedIdentity();
-            authenticationComplete(securityIdentity, authType, SERVLET_MESSAGE_LAYER);
+            if (registerSession) {
+                log.trace("Storing SecurityIdentity in HttpSession");
+                session = httpServletRequest.getSession(true);
+                session.setAttribute(IDENTITY_KEY, new IdentityContainer(securityIdentity, authType));
+            }
+            if (authStatus == AuthStatus.SUCCESS) {
+                authenticationComplete(securityIdentity, authType, SERVLET_MESSAGE_LAYER);
+                // TODO 3.8.3.5 If the request / response objects were wrapped we now need to use them.
+                return true;
+            }
         }
 
+        return false;
+
         // TODO We need the secureResponse side of the call as well!.
-        return success;
     }
 
     static Builder builder() {
@@ -211,6 +236,28 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         @Override
         public SecurityContext build() {
             return new ServletSecurityContextImpl(this);
+        }
+
+    }
+
+    static class IdentityContainer implements Serializable {
+
+        private static final long serialVersionUID = 812605442632466511L;
+
+        private volatile SecurityIdentity securityIdentity;
+        private volatile String authType;
+
+        IdentityContainer(final SecurityIdentity securityIdentity, final String authType) {
+            this.securityIdentity = securityIdentity;
+            this.authType = authType;
+        }
+
+        SecurityIdentity getSecurityIdentity() {
+            return securityIdentity;
+        }
+
+        String getAuthType() {
+            return authType;
         }
 
     }
