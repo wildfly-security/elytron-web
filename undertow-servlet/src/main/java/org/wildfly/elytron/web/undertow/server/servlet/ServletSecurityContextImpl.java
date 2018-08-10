@@ -19,6 +19,7 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
 import java.util.Collections;
+import java.util.Map;
 
 import javax.security.auth.Subject;
 import javax.security.auth.message.AuthException;
@@ -48,6 +49,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
     private static final Logger log = Logger.getLogger("org.wildfly.security.http.servlet");
 
+    private static final String AUTH_TYPE = "javax.servlet.http.authType";
     private static final String SERVLET_MESSAGE_LAYER = "HttpServlet";
 
     private final boolean enableJaspi;
@@ -149,14 +151,15 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         final Subject clientSubject = new Subject();
         AuthStatus authStatus = serverAuthContext.validateRequest(messageInfo, clientSubject, serverSubject);
         log.tracef("ServerAuthContext.validateRequest returned AuthStatus=%s", authStatus);
+        Map options = messageInfo.getMap();
         // TODO If SEND_SUCCESS and registerSession DO IT !!
         // TODO 3.8.3.5 If the request / response objects were wrapped we now need to use them.
 
-        // TODO Take any resulting SecurityIdentity and associate it for later.
         final boolean success = AuthStatus.SUCCESS == authStatus;
         if (success) {
+            String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName();
             SecurityIdentity securityIdentity = authenticationContext.getAuthorizedIdentity();
-            authenticationComplete(securityIdentity, getMechanismName(), SERVLET_MESSAGE_LAYER);
+            authenticationComplete(securityIdentity, authType, SERVLET_MESSAGE_LAYER);
         }
 
         // TODO We need the secureResponse side of the call as well!.
