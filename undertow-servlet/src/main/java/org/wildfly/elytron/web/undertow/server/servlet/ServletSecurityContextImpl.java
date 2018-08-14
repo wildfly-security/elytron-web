@@ -52,6 +52,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     private static final Logger log = Logger.getLogger("org.wildfly.security.http.servlet");
 
     private static final String AUTH_TYPE = "javax.servlet.http.authType";
+    private static final String MANDATORY = "javax.security.auth.message.MessagePolicy.isMandatory";
     private static final String REGISTER_SESSION = "javax.servlet.http.registerSession";
 
     private static final String SERVLET_MESSAGE_LAYER = "HttpServlet";
@@ -151,7 +152,9 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         MessageInfo messageInfo = new ServletMessageInfo();
         messageInfo.setRequestMessage(httpServletRequest);
         messageInfo.setResponseMessage(httpServletResponse);
-        // TODO 3.8.1.1 Set appropriate isMandatory policy
+        if (isAuthenticationRequired()) {
+            messageInfo.getMap().put(MANDATORY, Boolean.TRUE.toString());
+        }
 
         // TODO Should be possible to pass this in somehow.
         final Subject serverSubject = null;
