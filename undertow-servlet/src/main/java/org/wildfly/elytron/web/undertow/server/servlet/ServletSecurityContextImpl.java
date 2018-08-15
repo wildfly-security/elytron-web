@@ -41,6 +41,7 @@ import org.wildfly.security.auth.jaspi.impl.ServletMessageInfo;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 import io.undertow.security.api.SecurityContext;
+import io.undertow.server.HttpServerExchange;
 
 /**
  * An extension of {@link SecurityContextImpl} to add JASPIC / Servlet Profile Support.
@@ -62,8 +63,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     private final boolean enableJaspi;
     private final boolean integratedJaspi;
     private final String applicationContext;
-    private final HttpServletRequest httpServletRequest;
-    private final HttpServletResponse httpServletResponse;
+    private final RequestResponseAccessor requestResponseAccessor;
 
     /*
      * Although added for JASPIC if any other servlet specific behaviour is required it can be overridden here.
@@ -75,8 +75,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         this.enableJaspi = builder.enableJaspi;
         this.integratedJaspi = builder.integratedJaspi;
         this.applicationContext = builder.applicationContext;
-        this.httpServletRequest = builder.httpServletRequest;
-        this.httpServletResponse = builder.httpServletResponse;
+        this.requestResponseAccessor = builder.requestResponseAccessor;
         log.tracef("Created ServletSecurityContextImpl enableJapi=%b, applicationContext=%s", enableJaspi, applicationContext);
     }
 
@@ -125,6 +124,8 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     }
 
     private boolean authenticate(AuthConfigProvider authConfigProvider) throws AuthException, SecurityException {
+        final HttpServletRequest httpServletRequest = requestResponseAccessor.getHttpServletRequest();
+
         HttpSession session = httpServletRequest.getSession(false);
         if (session != null) {
             IdentityContainer identityContainer = (IdentityContainer) session.getAttribute(IDENTITY_KEY);
@@ -149,6 +150,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         ServerAuthConfig serverAuthConfig = authConfigProvider.getServerAuthConfig(SERVLET_MESSAGE_LAYER, applicationContext,
                 authenticationContext.createCallbackHandler());
 
+        final HttpServletResponse httpServletResponse = requestResponseAccessor.getHttpServletResponse();
         // This is the stage where it is expected we become per-request.
         MessageInfo messageInfo = new ServletMessageInfo();
         messageInfo.setRequestMessage(httpServletRequest);
@@ -172,6 +174,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         final Subject clientSubject = new Subject();
         AuthStatus authStatus = serverAuthContext.validateRequest(messageInfo, clientSubject, serverSubject);
         log.tracef("ServerAuthContext.validateRequest returned AuthStatus=%s", authStatus);
+        registerCleanUpTask(exchange, serverAuthContext, messageInfo, serverSubject);
 
         Map options = messageInfo.getMap();
         boolean registerSession = options.containsKey(REGISTER_SESSION) && Boolean.parseBoolean(String.valueOf(options.get(REGISTER_SESSION)));
@@ -185,19 +188,48 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
             }
             if (authStatus == AuthStatus.SUCCESS) {
                 authenticationComplete(securityIdentity, authType, SERVLET_MESSAGE_LAYER);
-                // TODO 3.8.3.5 If the request / response objects were wrapped we now need to use them.
+                HttpServletRequest newHttpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
+                if (httpServletRequest != newHttpServletRequest) {
+                    requestResponseAccessor.setHttpServletRequest(newHttpServletRequest);
+                }
+                HttpServletResponse newHttpServletResponse = (HttpServletResponse) messageInfo.getResponseMessage();
+                if (httpServletResponse != newHttpServletResponse) {
+                    requestResponseAccessor.setHttpServletResponse(newHttpServletResponse);
+                }
+
                 return true;
             }
         }
 
         return false;
-
-        // TODO We need the secureResponse side of the call as well!.
     }
 
     private String getMechanismName(final String defaultMechanimsName) {
         String mechanimsName = super.getMechanismName();
         return getMechanismName() != null ? mechanimsName : defaultMechanimsName;
+    }
+
+    private void registerCleanUpTask(final HttpServerExchange exchange, final ServerAuthContext serverAuthContext, final MessageInfo messageInfo, final Subject serviceSubject) {
+        exchange.putAttachment(CleanUpTask.ATTACHMENT_KEY, new CleanUpTask() {
+
+            @Override
+            public void cleanUp(HttpServerExchange exchange) throws Exception {
+                final HttpServletRequest httpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
+                final HttpServletResponse httpServletResponse = (HttpServletResponse) messageInfo.getResponseMessage();
+
+                AuthStatus authStatus = serverAuthContext.secureResponse(messageInfo, serviceSubject);
+
+                // Restore the request / response objects if an unwrapping occured.
+                HttpServletRequest newHttpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
+                if (httpServletRequest != newHttpServletRequest) {
+                    requestResponseAccessor.setHttpServletRequest(newHttpServletRequest);
+                }
+                HttpServletResponse newHttpServletResponse = (HttpServletResponse) messageInfo.getResponseMessage();
+                if (httpServletResponse != newHttpServletResponse) {
+                    requestResponseAccessor.setHttpServletResponse(newHttpServletResponse);
+                }
+            }
+        });
     }
 
     static Builder builder() {
@@ -209,8 +241,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         private boolean enableJaspi = true;
         private boolean integratedJaspi = true;
         private String applicationContext;
-        private HttpServletRequest httpServletRequest;
-        private HttpServletResponse httpServletResponse;
+        private RequestResponseAccessor requestResponseAccessor;
 
         Builder setEnableJaspi(boolean enableJaspi) {
             this.enableJaspi = enableJaspi;
@@ -230,14 +261,8 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
             return this;
         }
 
-        Builder setHttpServletRequest(final HttpServletRequest httpServletRequest) {
-            this.httpServletRequest = httpServletRequest;
-
-            return this;
-        }
-
-        Builder setHttpServletResponse(final HttpServletResponse httpServletResponse) {
-            this.httpServletResponse = httpServletResponse;
+        Builder setRequestResponseAccessor(final RequestResponseAccessor requestResponseAccessor) {
+            this.requestResponseAccessor = requestResponseAccessor;
 
             return this;
         }

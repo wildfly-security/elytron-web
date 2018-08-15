@@ -163,7 +163,7 @@ public class AuthenticationManager {
 
         final String applicationContext = deploymentInfo.getHostName() + " " + deploymentInfo.getContextPath();
 
-        return ElytronServletContextAssociationHandler.builder()
+        HttpHandler contextAssociationHander = ElytronServletContextAssociationHandler.builder()
                 .setApplicationContext(applicationContext)
                 .setEnableJaspi(builder.enableJaspi)
                 .setIntegratedJaspi(builder.integratedJapi)
@@ -172,6 +172,7 @@ public class AuthenticationManager {
                 .setMechanismSupplier(() -> getAuthenticationMechanisms(selectedMechanisms))
                 .setHttpExchangeSupplier(httpServerExchange -> new ElytronHttpServletExchange(httpServerExchange, scopeSessionListener))
                 .build();
+        return new CleanUpHandler(contextAssociationHander);
     }
 
     private HttpHandler finalSecurityHandlers(HttpHandler toWrap, final SecurityDomain securityDomain, final Function<String, RunAsIdentityMetaData> runAsMapper) {

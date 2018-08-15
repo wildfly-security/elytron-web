@@ -16,9 +16,6 @@
 
 package org.wildfly.elytron.web.undertow.server.servlet;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
 
 import io.undertow.security.api.SecurityContext;
@@ -47,16 +44,13 @@ public class ElytronServletContextAssociationHandler extends ElytronContextAssoc
 
     @Override
     public SecurityContext createSecurityContext(HttpServerExchange exchange) {
-        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequestContext.getServletRequest();
-        HttpServletResponse httpServletResponse = (HttpServletResponse) servletRequestContext.getServletResponse();
+        final RequestResponseAccessor requestResponseAccessor = new RequestResponseAccessor(exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY));
 
         return populateSecurityContextBuilder(ServletSecurityContextImpl.builder()
                 .setApplicationContext(applicationContext)
                 .setEnableJaspi(enableJaspi)
                 .setIntegratedJaspi(integratedJaspi)
-                .setHttpServletRequest(httpServletRequest)
-                .setHttpServletResponse(httpServletResponse)
+                .setRequestResponseAccessor(requestResponseAccessor)
                 , exchange).build();
     }
 
