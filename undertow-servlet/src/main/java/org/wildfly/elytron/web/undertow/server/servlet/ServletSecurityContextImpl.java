@@ -52,6 +52,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     private static final Logger log = Logger.getLogger("org.wildfly.security.http.servlet");
 
     private static final String AUTH_TYPE = "javax.servlet.http.authType";
+    private static final String DEFAULT_JASPI_MECHANISM = "JASPI";
     private static final String MANDATORY = "javax.security.auth.message.MessagePolicy.isMandatory";
     private static final String REGISTER_SESSION = "javax.servlet.http.registerSession";
 
@@ -175,7 +176,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         Map options = messageInfo.getMap();
         boolean registerSession = options.containsKey(REGISTER_SESSION) && Boolean.parseBoolean(String.valueOf(options.get(REGISTER_SESSION)));
         if ((authStatus == AuthStatus.SUCCESS || (authStatus == AuthStatus.SEND_SUCCESS && registerSession))) {
-            String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName();
+            String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName(DEFAULT_JASPI_MECHANISM);
             SecurityIdentity securityIdentity = authenticationContext.getAuthorizedIdentity();
             if (registerSession) {
                 log.trace("Storing SecurityIdentity in HttpSession");
@@ -192,6 +193,11 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         return false;
 
         // TODO We need the secureResponse side of the call as well!.
+    }
+
+    private String getMechanismName(final String defaultMechanimsName) {
+        String mechanimsName = super.getMechanismName();
+        return getMechanismName() != null ? mechanimsName : defaultMechanimsName;
     }
 
     static Builder builder() {
