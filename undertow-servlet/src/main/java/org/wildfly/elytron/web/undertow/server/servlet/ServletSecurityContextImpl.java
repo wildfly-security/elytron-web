@@ -76,7 +76,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         this.integratedJaspi = builder.integratedJaspi;
         this.applicationContext = builder.applicationContext;
         this.requestResponseAccessor = builder.requestResponseAccessor;
-        log.tracef("Created ServletSecurityContextImpl enableJapi=%b, applicationContext=%s", enableJaspi, applicationContext);
+        log.tracef("Created ServletSecurityContextImpl enableJapi=%b, integratedJaspi=%b, applicationContext=%s", enableJaspi, integratedJaspi, applicationContext);
     }
 
     @Override
