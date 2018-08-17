@@ -134,7 +134,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
                 String authType = identityContainer.getAuthType();
                 if (securityIdentity != null) {
                     log.trace("SecurityIdentity restored from HttpSession");
-                    authenticationComplete(securityIdentity, authType != null ? authType : getMechanismName(), SERVLET_MESSAGE_LAYER);
+                    authenticationComplete(securityIdentity, authType != null ? authType : getMechanismName());
                     return true;
                 }
             } else {
@@ -144,7 +144,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
         // TODO A lot of the initialisation could have happened in advance if it wasn't for the CallbackHandler, maybe
         // we can use some form of contextual handler associated with the thread and a delegate.
-        JaspiAuthenticationContext authenticationContext = JaspiAuthenticationContext.newInstance(securityDomain, SERVLET_MESSAGE_LAYER, integratedJaspi);
+        JaspiAuthenticationContext authenticationContext = JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi);
 
         // TODO - PermissionCheck
         ServerAuthConfig serverAuthConfig = authConfigProvider.getServerAuthConfig(SERVLET_MESSAGE_LAYER, applicationContext,
@@ -198,7 +198,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
                 boolean success = false;
                 if (securityIdentity != null) {
-                    authenticationComplete(securityIdentity, authType, SERVLET_MESSAGE_LAYER);
+                    authenticationComplete(securityIdentity, authType);
                     success = true;
                 }
 

@@ -136,12 +136,8 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     }
 
     protected void authenticationComplete(SecurityIdentity securityIdentity, String mechanism) {
-        authenticationComplete(new ElytronAccount(securityIdentity), mechanism, false);
-    }
-
-    protected void authenticationComplete(SecurityIdentity securityIdentity, String mechanism, String rolesCategory) {
         flexibleIdentityAssociation.setIdentity(securityIdentity);
-        authenticationComplete(new ElytronAccount(securityIdentity, rolesCategory), mechanism, false);
+        authenticationComplete(new ElytronAccount(securityIdentity), mechanism, false);
     }
 
     /**
