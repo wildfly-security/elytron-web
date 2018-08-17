@@ -242,7 +242,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
                 final HttpServletRequest httpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
                 final HttpServletResponse httpServletResponse = (HttpServletResponse) messageInfo.getResponseMessage();
 
-                AuthStatus authStatus = serverAuthContext.secureResponse(messageInfo, serviceSubject);
+                serverAuthContext.secureResponse(messageInfo, serviceSubject);
 
                 // Restore the request / response objects if an unwrapping occured.
                 HttpServletRequest newHttpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
