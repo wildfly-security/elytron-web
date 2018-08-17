@@ -187,7 +187,6 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
                 session.setAttribute(IDENTITY_KEY, new IdentityContainer(securityIdentity, authType));
             }
             if (authStatus == AuthStatus.SUCCESS) {
-                authenticationComplete(securityIdentity, authType, SERVLET_MESSAGE_LAYER);
                 HttpServletRequest newHttpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
                 if (httpServletRequest != newHttpServletRequest) {
                     requestResponseAccessor.setHttpServletRequest(newHttpServletRequest);
@@ -197,7 +196,33 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
                     requestResponseAccessor.setHttpServletResponse(newHttpServletResponse);
                 }
 
-                return true;
+                boolean success = false;
+                if (securityIdentity != null) {
+                    authenticationComplete(securityIdentity, authType, SERVLET_MESSAGE_LAYER);
+                    success = true;
+                }
+
+                success = success || !isAuthenticationRequired();
+
+                if (success) {
+                    setLogoutHandler(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            HttpSession session = httpServletRequest.getSession(false);
+                            if (session != null) {
+                                session.removeAttribute(IDENTITY_KEY);
+                            }
+                            try {
+                                serverAuthContext.cleanSubject(messageInfo, clientSubject);
+                            } catch (AuthException e) {
+                                log.debug("Unable to cleanSubject", e);
+                            }
+                        }
+                    });
+                }
+
+                return success;
             }
         }
 

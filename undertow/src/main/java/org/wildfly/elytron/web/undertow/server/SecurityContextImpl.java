@@ -102,7 +102,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
     }
 
-    private void setLogoutHandler(Runnable runnable) {
+    protected void setLogoutHandler(Runnable runnable) {
         this.logoutHandler = runnable;
     }
 
