@@ -170,6 +170,7 @@ public class AuthenticationManager {
                 .setNext(toWrap)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(() -> getAuthenticationMechanisms(selectedMechanisms))
+                .setAuthenticationMode(deploymentInfo.getAuthenticationMode())
                 .setHttpExchangeSupplier(httpServerExchange -> new ElytronHttpServletExchange(httpServerExchange, scopeSessionListener))
                 .build();
         return new CleanUpHandler(contextAssociationHander);
