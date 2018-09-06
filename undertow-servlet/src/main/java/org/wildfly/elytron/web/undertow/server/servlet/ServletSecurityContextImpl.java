@@ -19,6 +19,8 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
 import java.io.Serializable;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 
@@ -39,6 +41,7 @@ import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
 import org.wildfly.security.auth.jaspi.impl.JaspiAuthenticationContext;
 import org.wildfly.security.auth.jaspi.impl.ServletMessageInfo;
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
@@ -144,7 +147,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
         // TODO A lot of the initialisation could have happened in advance if it wasn't for the CallbackHandler, maybe
         // we can use some form of contextual handler associated with the thread and a delegate.
-        JaspiAuthenticationContext authenticationContext = JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi);
+        JaspiAuthenticationContext authenticationContext = doPrivileged((PrivilegedAction<JaspiAuthenticationContext>) () -> JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi));
 
         // TODO - PermissionCheck
         ServerAuthConfig serverAuthConfig = authConfigProvider.getServerAuthConfig(SERVLET_MESSAGE_LAYER, applicationContext,
@@ -255,6 +258,10 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
                 }
             }
         });
+    }
+
+    private static <T> T doPrivileged(final PrivilegedAction<T> action) {
+        return WildFlySecurityManager.isChecking() ? AccessController.doPrivileged(action) : action.run();
     }
 
     static Builder builder() {
