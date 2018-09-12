@@ -29,7 +29,7 @@ import java.util.stream.StreamSupport;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
- * A wrapper around {@link AuthenticatedRealmIdentity} to provide an implementation
+ * A wrapper around {@link SecurityIdentity} to provide an implementation
  * of {@link Account} as required by Undertow.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
@@ -43,7 +43,7 @@ public class ElytronAccount implements Account {
         checkNotNullParam("securityIdentity", securityIdentity);
         this.securityIdentity = securityIdentity;
         this.roles = Collections.unmodifiableSet(
-                StreamSupport.stream(securityIdentity.getRoles().spliterator(), true).collect(Collectors.toSet()));
+                StreamSupport.stream(securityIdentity.getRoles().spliterator(), false).collect(Collectors.toSet()));
     }
 
     /**
