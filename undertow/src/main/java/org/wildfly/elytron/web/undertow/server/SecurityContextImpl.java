@@ -49,7 +49,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
     private final ElytronHttpExchange httpExchange;
 
-    private final SecurityDomain securityDomain;
+    protected final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final String programmaticMechanismName;
 
@@ -59,7 +59,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private Runnable logoutHandler;
     private AuthenticationMode authMode;
 
-    private SecurityContextImpl(Builder builder) {
+    protected SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
         this.securityDomain = builder.securityDomain;
@@ -102,7 +102,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
     }
 
-    private void setLogoutHandler(Runnable runnable) {
+    protected void setLogoutHandler(Runnable runnable) {
         this.logoutHandler = runnable;
     }
 
@@ -133,6 +133,11 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         if(flexibleIdentityAssociation != null) {
             flexibleIdentityAssociation.setIdentity(securityDomain.getAnonymousSecurityIdentity());
         }
+    }
+
+    protected void authenticationComplete(SecurityIdentity securityIdentity, String mechanism) {
+        flexibleIdentityAssociation.setIdentity(securityIdentity);
+        authenticationComplete(new ElytronAccount(securityIdentity), mechanism, false);
     }
 
     /**
@@ -167,7 +172,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         return new Builder();
     }
 
-    static class Builder {
+    public static class Builder {
 
         HttpServerExchange exchange;
         String programmaticMechanismName;
@@ -176,7 +181,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         ElytronHttpExchange httpExchange;
         AuthenticationMode authMode;
 
-        private Builder() {
+        protected Builder() {
         }
 
         Builder setExchange(HttpServerExchange exchange) {
@@ -219,7 +224,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return this;
         }
 
-        SecurityContext build() {
+        public SecurityContext build() {
             return new SecurityContextImpl(this);
         }
     }

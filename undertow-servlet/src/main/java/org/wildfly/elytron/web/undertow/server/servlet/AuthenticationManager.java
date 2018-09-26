@@ -37,7 +37,6 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import org.jboss.metadata.javaee.jboss.RunAsIdentityMetaData;
-import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
 import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
 import org.wildfly.elytron.web.undertow.server.ScopeSessionListener;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
@@ -162,13 +161,19 @@ public class AuthenticationManager {
             }
         }
 
-        return ElytronContextAssociationHandler.builder()
+        final String applicationContext = deploymentInfo.getHostName() + " " + deploymentInfo.getContextPath();
+
+        HttpHandler contextAssociationHander = ElytronServletContextAssociationHandler.builder()
+                .setApplicationContext(applicationContext)
+                .setEnableJaspi(builder.enableJaspi)
+                .setIntegratedJaspi(builder.integratedJapi)
                 .setNext(toWrap)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(() -> getAuthenticationMechanisms(selectedMechanisms))
                 .setAuthenticationMode(deploymentInfo.getAuthenticationMode())
                 .setHttpExchangeSupplier(httpServerExchange -> new ElytronHttpServletExchange(httpServerExchange, scopeSessionListener))
                 .build();
+        return new CleanUpHandler(contextAssociationHander);
     }
 
     private HttpHandler finalSecurityHandlers(HttpHandler toWrap, final SecurityDomain securityDomain, final Function<String, RunAsIdentityMetaData> runAsMapper) {
@@ -205,6 +210,8 @@ public class AuthenticationManager {
         private AuthorizationManager authorizationManager;
         private UnaryOperator<HttpServerAuthenticationMechanismFactory> httpAuthenticationFactoryTransformer;
         private Function<String, RunAsIdentityMetaData> runAsMapper;
+        private boolean enableJaspi = true;
+        private boolean integratedJapi = true;
 
         private boolean built = false;
 
@@ -270,6 +277,33 @@ public class AuthenticationManager {
         public Builder setRunAsMapper(final Function<String, RunAsIdentityMetaData> runAsMapper) {
             assertNotBuilt();
             this.runAsMapper = runAsMapper;
+
+            return this;
+        }
+
+        /**
+         * Set if JASPI authentication should be enabled.
+         *
+         * @param enableJaspi if JASPI authentication should be enabled.
+         * @return this {@link Builder}
+         */
+        public Builder setEnableJaspi(final boolean enableJaspi) {
+            assertNotBuilt();
+            this.enableJaspi = enableJaspi;
+
+            return this;
+        }
+
+        /**
+         * Set if JASPI authentication should be integrated with the {@link SecurityDomain}, if not integrated AdHoc identities
+         * will be created instead from the domain.
+         *
+         * @param integratedJaspi if JASPI authentication should be integrated with the {@link SecurityDomain}
+         * @return this {@link Builder}
+         */
+        public Builder setIntegratedJaspi(final boolean integratedJaspi) {
+            assertNotBuilt();
+            this.integratedJapi = integratedJaspi;
 
             return this;
         }
