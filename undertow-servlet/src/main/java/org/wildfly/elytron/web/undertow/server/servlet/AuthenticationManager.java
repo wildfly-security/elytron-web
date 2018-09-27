@@ -210,7 +210,7 @@ public class AuthenticationManager {
         private AuthorizationManager authorizationManager;
         private UnaryOperator<HttpServerAuthenticationMechanismFactory> httpAuthenticationFactoryTransformer;
         private Function<String, RunAsIdentityMetaData> runAsMapper;
-        private boolean enableJaspi = true;
+        private boolean enableJaspi = false;
         private boolean integratedJapi = true;
 
         private boolean built = false;
