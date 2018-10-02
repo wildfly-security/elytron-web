@@ -65,6 +65,7 @@ import io.undertow.server.session.SessionConfig;
 import io.undertow.server.session.SessionManager;
 import io.undertow.util.AbstractAttachable;
 import io.undertow.util.AttachmentKey;
+import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 
 /**
@@ -108,7 +109,9 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
      */
     @Override
     public void addResponseHeader(String headerName, String headerValue) {
-        httpServerExchange.getResponseHeaders().add(new HttpString(headerName), headerValue);
+        HttpString headerString = Headers.fromCache(headerName);
+        httpServerExchange.getResponseHeaders().add(headerString != null ? headerString : new HttpString(headerName),
+                headerValue);
     }
 
     /**
