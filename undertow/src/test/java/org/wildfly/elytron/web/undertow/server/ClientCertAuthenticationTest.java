@@ -19,6 +19,13 @@ package org.wildfly.elytron.web.undertow.server;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -27,12 +34,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.Principal;
-import java.security.spec.AlgorithmParameterSpec;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -115,11 +116,13 @@ public class ClientCertAuthenticationTest extends AbstractHttpServerMechanismTes
     @Test
     public void testSSLSessionIdentityCacheHit() throws Exception {
         HttpClient httpClient = HttpClientBuilder.create()
+                .disableConnectionState() // Was causing premature connection closure and SSL session invalidation.
                 .setSSLContext(createRecognizedSSLContext())
                 .setSSLHostnameVerifier((String h, SSLSession s) -> true)
                 .build();
 
         assertSuccessfulResponse(httpClient.execute(new HttpGet(serverA.createUri())), "ladybird");
+        assertEquals(2, this.realmIdentityInvocationCount.get());
 
         for (int i = 0; i < 10; i++) {
             assertSuccessfulResponse(httpClient.execute(new HttpGet(serverA.createUri())), "ladybird");

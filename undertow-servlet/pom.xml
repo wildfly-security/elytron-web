@@ -120,4 +120,12 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <id>public-jboss</id>
+            <name>Public JBoss Repository Group</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+        </repository>
+    </repositories>
+
 </project>

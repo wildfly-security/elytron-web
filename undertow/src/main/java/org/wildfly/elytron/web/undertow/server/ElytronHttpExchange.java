@@ -76,11 +76,12 @@ import io.undertow.util.HttpString;
 public class ElytronHttpExchange implements HttpExchangeSpi {
 
     private static final AttachmentKey<HttpScope> HTTP_SCOPE_ATTACHMENT_KEY = AttachmentKey.create(HttpScope.class);
+    private static final FormParserFactory FORM_PARSER_FACTORY = FormParserFactory.builder().build();
 
     private final HttpServerExchange httpServerExchange;
     private final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers;
     private final ScopeSessionListener scopeSessionListener;
-    private final FormParserFactory formParserFactory = FormParserFactory.builder().build();
+
 
     private Map<String, List<String>> requestParameters;
 
@@ -215,7 +216,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
 
                     Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
 
-                    FormDataParser parser = formParserFactory.createParser(httpServerExchange);
+                    FormDataParser parser = FORM_PARSER_FACTORY.createParser(httpServerExchange);
 
                     if (parser != null) {
                         try {

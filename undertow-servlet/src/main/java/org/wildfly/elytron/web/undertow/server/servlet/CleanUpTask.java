@@ -28,6 +28,6 @@ interface CleanUpTask {
 
     AttachmentKey<CleanUpTask> ATTACHMENT_KEY = AttachmentKey.create(CleanUpTask.class);
 
-    void cleanUp(final HttpServerExchange exchange) throws Exception;
+    void cleanUp(HttpServerExchange exchange) throws Exception;
 
 }
