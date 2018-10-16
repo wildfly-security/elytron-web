@@ -80,7 +80,8 @@ public class AuthenticationManager {
                 .addScopeResolver(Scope.APPLICATION, APPLICATION_SCOPE_RESOLVER)
                 .build();
 
-        final SecurityDomain securityDomain = builder.httpAuthenticationFactory.getSecurityDomain();
+        final HttpAuthenticationFactory httpAuthenticationFactory = builder.httpAuthenticationFactory;
+        final SecurityDomain securityDomain = httpAuthenticationFactory != null ? httpAuthenticationFactory.getSecurityDomain() : builder.securityDomain;
 
         if (WildFlySecurityManager.isChecking()) {
             doPrivileged((PrivilegedAction<Void>) () -> {
@@ -109,11 +110,17 @@ public class AuthenticationManager {
     }
 
     private HttpHandler initialSecurityHandler(final DeploymentInfo deploymentInfo, HttpHandler toWrap, SecurityDomain securityDomain, ScopeSessionListener scopeSessionListener) {
-        final Collection<String> availableMechanisms = builder.httpAuthenticationFactory.getMechanismNames();
-        if (availableMechanisms.isEmpty()) {
-            throw new IllegalStateException("There are no mechanisms available from the HttpAuthenticationFactory.");
-            //throw ROOT_LOGGER.noMechanismsAvailable();
+        final HttpAuthenticationFactory httpAuthenticationFactory = builder.httpAuthenticationFactory;
+        final Collection<String> availableMechanisms;
+        if (httpAuthenticationFactory != null) {
+            availableMechanisms = builder.httpAuthenticationFactory.getMechanismNames();
+            if (availableMechanisms.isEmpty()) {
+                throw new IllegalStateException("There are no mechanisms available from the HttpAuthenticationFactory.");
+            }
+        } else {
+            availableMechanisms = Collections.emptyList();
         }
+
 
         Map<String, String> tempBaseConfiguration = new HashMap<>();
         tempBaseConfiguration.put(CONFIG_CONTEXT_PATH, deploymentInfo.getContextPath());
@@ -206,6 +213,7 @@ public class AuthenticationManager {
     public static class Builder {
 
         private HttpAuthenticationFactory httpAuthenticationFactory;
+        private SecurityDomain securityDomain;
         private boolean overrideDeploymentConfig;
         private AuthorizationManager authorizationManager;
         private UnaryOperator<HttpServerAuthenticationMechanismFactory> httpAuthenticationFactoryTransformer;
@@ -218,12 +226,37 @@ public class AuthenticationManager {
         /**
          * Set the {@link HttpAuthenticationFactory} to be used to secure the deployment.
          *
+         * Only one of {@link HttpAuthenticationFactory} and {@link SecurityDomain} should be set
+         *
          * @param httpAuthenticationFactory the {@link HttpAuthenticationFactory} to be used to secure the deployment.
+         * @throws IllegalStateException If a {@link SecurityDomain} has already been set.
          * @return this {@link Builder}
          */
         public Builder setHttpAuthenticationFactory(final HttpAuthenticationFactory httpAuthenticationFactory) {
             assertNotBuilt();
+            if (httpAuthenticationFactory != null && securityDomain != null) {
+                throw new IllegalStateException("HttpAuthenticationFactory and SecurityDomain can not both be set at the same time.");
+            }
             this.httpAuthenticationFactory = httpAuthenticationFactory;
+
+            return this;
+        }
+
+        /**
+         * Set the {@link SecurityDomain} to be used to secure the deployment.
+         *
+         * Only one of {@link HttpAuthenticationFactory} and {@link SecurityDomain} should be set
+         *
+         * @param securityDomain the {@link SecurityDomain} to be used to secure the deployment.
+         * @throws IllegalStateException If a {@link HttpAuthenticationFactory} has already been set.
+         * @return this {@link Builder}
+         */
+        public Builder setSecurityDomain(final SecurityDomain securityDomain) {
+            assertNotBuilt();
+            if (httpAuthenticationFactory != null && securityDomain != null) {
+                throw new IllegalStateException("HttpAuthenticationFactory and SecurityDomain can not both be set at the same time.");
+            }
+            this.securityDomain = securityDomain;
 
             return this;
         }
