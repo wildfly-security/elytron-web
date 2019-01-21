@@ -83,7 +83,7 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
     private final ScopeSessionListener scopeSessionListener;
 
 
-    private Map<String, List<String>> requestParameters;
+    protected Map<String, List<String>> requestParameters;
 
     protected ElytronHttpExchange(final HttpServerExchange httpServerExchange,
             final Map<Scope, Function<HttpServerExchange, HttpScope>> scopeResolvers,
