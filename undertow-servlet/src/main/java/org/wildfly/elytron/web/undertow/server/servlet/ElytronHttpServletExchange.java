@@ -20,6 +20,12 @@ import static org.wildfly.security.http.HttpConstants.OK;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -28,6 +34,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
@@ -70,6 +77,29 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
     protected SessionManager getSessionManager() {
         ServletRequestContext servletRequestContext = httpServerExchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         return servletRequestContext.getDeployment().getSessionManager();
+    }
+
+    @Override
+    public Map<String, List<String>> getRequestParameters() {
+        if (requestParameters == null) {
+            synchronized (this) {
+                ServletRequestContext servletRequestContext = httpServerExchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+                ServletRequest servletRequest = servletRequestContext.getServletRequest();
+                if (servletRequest instanceof HttpServletRequest) {
+                    HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+                    Map<String, String[]> parameters = httpServletRequest.getParameterMap();
+                    Map<String, List<String>> requestParameters = new HashMap<>(parameters.size());
+                    for (Entry<String, String[]> entry : parameters.entrySet()) {
+                        requestParameters.put(entry.getKey(), Collections.unmodifiableList(Arrays.asList(entry.getValue())));
+                    }
+                    this.requestParameters = Collections.unmodifiableMap(requestParameters);
+                } else {
+                    return super.getRequestParameters();
+                }
+            }
+        }
+
+        return requestParameters;
     }
 
     @Override
