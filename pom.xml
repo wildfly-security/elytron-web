@@ -44,8 +44,8 @@
     </licenses>
 
     <properties>
-        <version.org.wildfly.security.elytron>1.8.0.CR1</version.org.wildfly.security.elytron>
-        <version.org.wildfly.common>1.4.0.Final</version.org.wildfly.common>
+        <version.org.wildfly.security.elytron>1.9.0.Alpha1-SNAPSHOT</version.org.wildfly.security.elytron>
+        <version.org.wildfly.common>1.5.0.Alpha4</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5.6</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
         <version.org.jboss.logging>3.3.1.Final</version.org.jboss.logging>
@@ -206,12 +206,13 @@
             <!-- 
                   Elytron Web Dependencies
              -->
+             
+            <dependency>
+                <groupId>org.wildfly.security.elytron-web</groupId>
+                <artifactId>undertow-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
-             <dependency>
-                 <groupId>org.wildfly.security.elytron-web</groupId>
-                 <artifactId>undertow-server</artifactId>
-                 <version>${project.version}</version>
-             </dependency>
 
              <!-- 
                   External Dependencies
@@ -224,21 +225,88 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron</artifactId>
-                <version>${version.org.wildfly.security.elytron}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.wildfly.common</groupId>
                 <artifactId>wildfly-common</artifactId>
                 <version>${version.org.wildfly.common}</version>
                 <scope>provided</scope>
             </dependency>
-
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-auth-server</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-auth-server-deprecated</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>            
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-util</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-jaspi</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-security-manager</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-ssl</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            
             <!--
                   Test Scope Only
              -->
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-realm</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-realm-token</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>test</scope>
+            </dependency>             
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-deprecated</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>test</scope>            
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-sso</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>test</scope>
+            </dependency>            
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-x500-deprecated</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>test</scope>
+            </dependency>
+                         
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
