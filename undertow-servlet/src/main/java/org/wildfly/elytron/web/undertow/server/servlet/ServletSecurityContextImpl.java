@@ -41,7 +41,6 @@ import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
 import org.wildfly.security.auth.jaspi.impl.JaspiAuthenticationContext;
 import org.wildfly.security.auth.jaspi.impl.ServletMessageInfo;
 import org.wildfly.security.auth.server.SecurityIdentity;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
@@ -261,7 +260,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     }
 
     private static <T> T doPrivileged(final PrivilegedAction<T> action) {
-        return WildFlySecurityManager.isChecking() ? AccessController.doPrivileged(action) : action.run();
+        return System.getSecurityManager() != null ? AccessController.doPrivileged(action) : action.run();
     }
 
     static Builder builder() {

@@ -46,7 +46,6 @@ import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.Scope;
 import org.wildfly.security.http.util.PropertiesServerMechanismFactory;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.servlet.api.AuthMethodConfig;
@@ -83,7 +82,7 @@ public class AuthenticationManager {
         final HttpAuthenticationFactory httpAuthenticationFactory = builder.httpAuthenticationFactory;
         final SecurityDomain securityDomain = httpAuthenticationFactory != null ? httpAuthenticationFactory.getSecurityDomain() : builder.securityDomain;
 
-        if (WildFlySecurityManager.isChecking()) {
+        if (System.getSecurityManager() != null) {
             doPrivileged((PrivilegedAction<Void>) () -> {
                 securityDomain.registerWithClassLoader(deploymentInfo.getClassLoader());
                 return null;
