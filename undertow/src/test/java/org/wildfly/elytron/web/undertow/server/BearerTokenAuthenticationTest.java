@@ -88,7 +88,7 @@ public class BearerTokenAuthenticationTest extends AbstractHttpServerMechanismTe
         setBearerToken(get, createToken("alice", new Date(new Date().getTime() - 10000)));
 
         HttpResponse result = httpClient.execute(get);
-        assertEquals(StatusCodes.FORBIDDEN, result.getStatusLine().getStatusCode());
+        assertEquals(StatusCodes.UNAUTHORIZED, result.getStatusLine().getStatusCode());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class BearerTokenAuthenticationTest extends AbstractHttpServerMechanismTe
         setBearerToken(get, createToken("alice", new Date(new Date().getTime() + 10000), generateKeyPair().getPrivate()));
 
         HttpResponse result = httpClient.execute(get);
-        assertEquals(StatusCodes.FORBIDDEN, result.getStatusLine().getStatusCode());
+        assertEquals(StatusCodes.UNAUTHORIZED, result.getStatusLine().getStatusCode());
     }
 
     @Override
