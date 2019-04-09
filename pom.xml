@@ -293,7 +293,13 @@
                 <artifactId>wildfly-elytron-http-sso</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
                 <scope>test</scope>
-            </dependency>            
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-password-impl</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-x500-deprecated</artifactId>
