@@ -17,20 +17,19 @@
  */
 package org.wildfly.elytron.web.undertow.server;
 
-import io.undertow.security.api.AuthenticationMode;
-import io.undertow.util.FlexBase64;
-import io.undertow.util.StatusCodes;
+import static io.undertow.util.Headers.AUTHORIZATION;
+import static io.undertow.util.Headers.BASIC;
+import static org.junit.Assert.assertEquals;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.Rule;
 import org.junit.Test;
-import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
 
-import static io.undertow.util.Headers.AUTHORIZATION;
-import static io.undertow.util.Headers.BASIC;
-import static org.junit.Assert.assertEquals;
+import io.undertow.security.api.AuthenticationMode;
+import io.undertow.util.FlexBase64;
+import io.undertow.util.StatusCodes;
 
 /**
  * Test case to test CONSTRAINT-DRIVEN AuthenticationMode with BASIC authentication
@@ -39,8 +38,14 @@ import static org.junit.Assert.assertEquals;
  */
 public class ConstraintDrivenAuthenticationModeTest extends BasicAuthenticationTest {
 
-    @Rule
-    public UndertowServer server = new UndertowServer(createRootHttpHandler(null, AuthenticationMode.CONSTRAINT_DRIVEN));
+    public ConstraintDrivenAuthenticationModeTest() throws Exception {
+        super();
+    }
+
+    @Override
+    protected AuthenticationMode getAuthenticationMode() {
+        return AuthenticationMode.CONSTRAINT_DRIVEN;
+    }
 
     @Test
     public void testUnconstrainedAccessWithCorrectPassword() throws Exception {

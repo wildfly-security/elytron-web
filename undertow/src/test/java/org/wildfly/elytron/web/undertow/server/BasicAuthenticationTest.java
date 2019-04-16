@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source
  *
- * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,145 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.wildfly.elytron.web.undertow.server;
 
-import static io.undertow.util.Headers.AUTHORIZATION;
-import static io.undertow.util.Headers.BASIC;
-import static io.undertow.util.Headers.WWW_AUTHENTICATE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
+import org.wildfly.elytron.web.undertow.common.BasicAuthenticationBase;
+import org.wildfly.elytron.web.undertow.common.UndertowServer;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import io.undertow.util.FlexBase64;
-import io.undertow.util.StatusCodes;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.wildfly.elytron.web.undertow.server.util.UndertowServer;
-import org.wildfly.security.auth.permission.LoginPermission;
-import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
-import org.wildfly.security.auth.realm.SimpleRealmEntry;
-import org.wildfly.security.auth.server.SecurityDomain;
-import org.wildfly.security.credential.PasswordCredential;
-import org.wildfly.security.password.PasswordFactory;
-import org.wildfly.security.password.spec.ClearPasswordSpec;
-import org.wildfly.security.permission.PermissionVerifier;
+import io.undertow.security.api.AuthenticationMode;
 
 /**
  * Test case to test HTTP BASIC authentication where authentication is backed by Elytron.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class BasicAuthenticationTest extends AbstractHttpServerMechanismTest {
+public class BasicAuthenticationTest extends BasicAuthenticationBase {
 
-    @Rule
-    public UndertowServer server = new UndertowServer(createRootHttpHandler());
-
-    @Test
-    public void testUnauthorized() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.createUri());
-
-        assertUnauthorizedResponse(httpClient.execute(get));
-    }
-
-    @Test
-    public void testSuccessfulAuthentication() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.createUri());
-
-        get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:Coleoptera".getBytes(), false));
-
-        HttpResponse result = httpClient.execute(get);
-
-        assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
-        assertSuccessfulResponse(result, "elytron");
-    }
-
-    @Test
-    public void testFailedAuthentication() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.createUri());
-
-        get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:bad_password".getBytes(), false));
-
-        assertUnauthorizedResponse(httpClient.execute(get));
-    }
-
-    @Test
-    public void testUnconstrainedAccessWithCorrectPassword() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.createUri("/unsecure"));
-
-        get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:Coleoptera".getBytes(), false));
-
-        HttpResponse result = httpClient.execute(get);
-
-        assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
-        assertSuccessfulUnconstraintResponse(result, "elytron");
-    }
-
-    @Test
-    public void testUnconstrainedAccessWithIncorrectPassword() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.createUri("/unsecure"));
-
-        get.addHeader(AUTHORIZATION.toString(), BASIC + " " + FlexBase64.encodeString("elytron:bad_password".getBytes(), false));
-
-        HttpResponse result = httpClient.execute(get);
-
-        assertUnauthorizedResponse(result);
-    }
-
-    @Test
-    public void testUnconstrainedAccessWithoutPassword() throws Exception {
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(server.createUri("/unsecure"));
-
-        HttpResponse result = httpClient.execute(get);
-
-        assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
-        assertSuccessfulUnconstraintResponse(result, null);
-    }
-
-    private void assertUnauthorizedResponse(HttpResponse result) {
-        assertEquals(StatusCodes.UNAUTHORIZED, result.getStatusLine().getStatusCode());
-
-        Header wwwAuthenticateHeader = result.getFirstHeader(WWW_AUTHENTICATE.toString());
-
-        assertNotNull(wwwAuthenticateHeader);
-        assertEquals(BASIC + " realm=\"Elytron Realm\"", wwwAuthenticateHeader.getValue());
+    public BasicAuthenticationTest() throws Exception {
+        super();
     }
 
     @Override
-    protected String getMechanismName() {
-        return "BASIC";
+    protected UndertowServer createUndertowServer() throws Exception {
+        return UndertowCoreServer.builder()
+                .setSecurityDomain(getSecurityDomain())
+                .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
+                .setAuthenticationMode(getAuthenticationMode())
+                .build();
     }
 
-    @Override
-    protected SecurityDomain doCreateSecurityDomain() throws Exception {
-        PasswordFactory passwordFactory = PasswordFactory.getInstance(ALGORITHM_CLEAR);
-
-        Map<String, SimpleRealmEntry> passwordMap = new HashMap<>();
-        passwordMap.put("elytron", new SimpleRealmEntry(Collections.singletonList(new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray()))))));
-
-        SimpleMapBackedSecurityRealm simpleRealm = new SimpleMapBackedSecurityRealm();
-        simpleRealm.setPasswordMap(passwordMap);
-
-        SecurityDomain.Builder builder = SecurityDomain.builder()
-                .setDefaultRealmName("TestRealm");
-
-        builder.addRealm("TestRealm", simpleRealm).build();
-        builder.setPermissionMapper((principal, roles) -> PermissionVerifier.from(new LoginPermission()));
-
-        return builder.build();
+    protected AuthenticationMode getAuthenticationMode() {
+        return null;
     }
+
 }

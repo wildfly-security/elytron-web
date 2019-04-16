@@ -44,6 +44,7 @@
     </licenses>
 
     <properties>
+        <version.io.undertow>2.0.13.Final</version.io.undertow>
         <version.org.wildfly.security.elytron>1.9.0.CR2</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.5.0.Alpha4</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5.6</version.org.apache.httpcomponents.httpclient>
@@ -75,6 +76,7 @@
 
     <modules>
         <module>undertow</module>
+        <module>undertow-common-test</module>
         <module>undertow-servlet</module>
     </modules>
 
@@ -212,11 +214,40 @@
                 <artifactId>undertow-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wildfly.security.elytron-web</groupId>
+                <artifactId>undertow-common-test</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security.elytron-web</groupId>
+                <artifactId>undertow-servlet</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
 
              <!-- 
                   External Dependencies
               -->
+
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-core</artifactId>
+                <version>${version.io.undertow}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.xnio</groupId>
+                        <artifactId>xnio-nio</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-servlet</artifactId>
+                <version>${version.io.undertow}</version>
+                <scope>provided</scope>
+            </dependency>
 
             <dependency>
                 <groupId>org.jboss.logging</groupId>
@@ -241,7 +272,25 @@
                 <artifactId>wildfly-elytron-auth-server-deprecated</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
                 <scope>provided</scope>
-            </dependency>            
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-auth-server-http</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-base</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-credential</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-http</artifactId>
@@ -274,25 +323,25 @@
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-realm</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-realm-token</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
-                <scope>test</scope>
-            </dependency>             
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-http-deprecated</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
-                <scope>test</scope>            
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-http-sso</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
@@ -304,26 +353,25 @@
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-x500-deprecated</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
             </dependency>
-                         
+
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${version.junit.junit}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${version.org.apache.httpcomponents.httpclient}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${version.org.apache.httpcomponents.httpcore}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logmanager</groupId>
@@ -359,7 +407,7 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${version.org.infinispan}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.json</groupId>
@@ -377,7 +425,7 @@
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>${version.com.nimbusds.nimbus-jose-jwt}</version>
-                <scope>test</scope>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

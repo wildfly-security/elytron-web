@@ -43,7 +43,6 @@
     </licenses>
 
     <properties>
-        <version.io.undertow>2.0.13.Final</version.io.undertow>
         <version.jboss.metadata>11.0.0.Final</version.jboss.metadata>
         <version.org.jboss.spec.jacc>1.0.1.Final</version.org.jboss.spec.jacc>
         <version.org.jboss.spec.jaspi>1.0.2.Final</version.org.jboss.spec.jaspi>
@@ -59,7 +58,6 @@
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-core</artifactId>
-            <version>${version.io.undertow}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -71,7 +69,6 @@
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-servlet</artifactId>
-            <version>${version.io.undertow}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
