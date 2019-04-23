@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Principal;
@@ -53,6 +54,7 @@ import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.permission.PermissionVerifier;
+import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.security.x500.X500AttributePrincipalDecoder;
 
 
@@ -224,6 +226,19 @@ public abstract class ClientCertAuthenticationBase extends AbstractHttpServerMec
         }
 
         return keyStore;
+    }
+
+    protected SSLContext getSSLContext(final boolean authenticate) throws GeneralSecurityException, Exception {
+        SSLContextBuilder builder = new SSLContextBuilder()
+                .setSecurityDomain(getSecurityDomain())
+                .setKeyManager(getKeyManager("/tls/scarab.keystore"))
+                .setTrustManager(getCATrustManager());
+
+        if (authenticate) {
+            builder.setWantClientAuth(true);
+        }
+
+        return builder.build().create();
     }
 
     protected abstract UndertowServer createUndertowServerA() throws Exception;

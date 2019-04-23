@@ -18,18 +18,18 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import java.util.Collections;
 
-import org.wildfly.elytron.web.undertow.common.BasicAuthenticationBase;
+import org.wildfly.elytron.web.undertow.common.FormAuthenticationBase;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
 import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer;
 
 /**
- * Test case to test HTTP BASIC authentication where authentication is backed by Elytron.
+ * Test case to test HTTP FORM authentication where authentication is backed by Elytron.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class BasicServletAuthenticationTest extends BasicAuthenticationBase {
+public class FormServletAuthenticationTest extends FormAuthenticationBase {
 
-    public BasicServletAuthenticationTest() throws Exception {
+    public FormServletAuthenticationTest() throws Exception {
         super();
     }
 

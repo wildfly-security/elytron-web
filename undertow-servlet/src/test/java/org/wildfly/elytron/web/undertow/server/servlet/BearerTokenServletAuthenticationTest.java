@@ -18,18 +18,18 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import java.util.Collections;
 
-import org.wildfly.elytron.web.undertow.common.BasicAuthenticationBase;
+import org.wildfly.elytron.web.undertow.common.BearerTokenAuthenticationBase;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
 import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer;
 
 /**
- * Test case to test HTTP BASIC authentication where authentication is backed by Elytron.
+ * Test case to {@link org.wildfly.security.http.impl.BearerTokenAuthenticationMechanism}.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class BasicServletAuthenticationTest extends BasicAuthenticationBase {
+public class BearerTokenServletAuthenticationTest extends BearerTokenAuthenticationBase {
 
-    public BasicServletAuthenticationTest() throws Exception {
+    public BearerTokenServletAuthenticationTest() throws Exception {
         super();
     }
 

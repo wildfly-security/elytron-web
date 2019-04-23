@@ -18,7 +18,6 @@ package org.wildfly.elytron.web.undertow.server;
 
 import org.wildfly.elytron.web.undertow.common.ClientCertAuthenticationBase;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
-import org.wildfly.security.ssl.SSLContextBuilder;
 
 /**
  * Test case for CLIENT_CERT authentication.
@@ -35,11 +34,7 @@ public class ClientCertAuthenticationTest extends ClientCertAuthenticationBase {
         return UndertowCoreServer.builder()
                 .setSecurityDomain(getSecurityDomain())
                 .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
-                .setSslContext(new SSLContextBuilder()
-                        .setSecurityDomain(getSecurityDomain())
-                        .setKeyManager(getKeyManager("/tls/scarab.keystore"))
-                        .setTrustManager(getCATrustManager())
-                        .build().create())
+                .setSslContext(getSSLContext(false))
                 .build();
     }
 
@@ -49,11 +44,7 @@ public class ClientCertAuthenticationTest extends ClientCertAuthenticationBase {
                 .setSecurityDomain(getSecurityDomain())
                 .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
                 .setPort(7777)
-                .setSslContext(new SSLContextBuilder()
-                        .setKeyManager(getKeyManager("/tls/scarab.keystore"))
-                        .setTrustManager(getCATrustManager())
-                        .setWantClientAuth(true)
-                        .build().create())
+                .setSslContext(getSSLContext(true))
                 .build();
     }
 

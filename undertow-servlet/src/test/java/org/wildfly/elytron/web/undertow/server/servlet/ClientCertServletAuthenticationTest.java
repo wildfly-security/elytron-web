@@ -18,27 +18,39 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import java.util.Collections;
 
-import org.wildfly.elytron.web.undertow.common.BasicAuthenticationBase;
+import org.wildfly.elytron.web.undertow.common.ClientCertAuthenticationBase;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
 import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer;
 
 /**
- * Test case to test HTTP BASIC authentication where authentication is backed by Elytron.
+ * Test case for CLIENT_CERT authentication.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class BasicServletAuthenticationTest extends BasicAuthenticationBase {
+public class ClientCertServletAuthenticationTest extends ClientCertAuthenticationBase {
 
-    public BasicServletAuthenticationTest() throws Exception {
+    public ClientCertServletAuthenticationTest() throws Exception {
         super();
     }
 
     @Override
-    protected UndertowServer createUndertowServer() throws Exception {
+    protected UndertowServer createUndertowServerA() throws Exception {
         return UndertowServletServer.builder()
                 .setAuthenticationMechanism(getMechanismName())
                 .setSecurityDomain(getSecurityDomain())
                 .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()))
+                .setSslContext(getSSLContext(false))
+                .build();
+    }
+
+    @Override
+    protected UndertowServer createUndertowServerB() throws Exception {
+        return UndertowServletServer.builder()
+                .setAuthenticationMechanism(getMechanismName())
+                .setSecurityDomain(getSecurityDomain())
+                .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()))
+                .setSslContext(getSSLContext(true))
+                .setPort(7777)
                 .build();
     }
 

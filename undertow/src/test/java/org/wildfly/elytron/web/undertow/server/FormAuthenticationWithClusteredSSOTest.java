@@ -44,7 +44,7 @@ public class FormAuthenticationWithClusteredSSOTest extends FormAuthenticationWi
                 .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
                 .setSessionManager(sessionManager)
                 .setPort(port)
-                .setDeploymentName(sessionManager.getDeploymentName())
+                .setDeploymentName("/" + sessionManager.getDeploymentName())
                 .build();
     }
 
