@@ -1,13 +1,11 @@
 /*
- * JBoss, Home of Professional Open Source
- *
- * Copyright 2019 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2019 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,35 +14,32 @@
  * limitations under the License.
  */
 
-package org.wildfly.elytron.web.undertow.server;
+package org.wildfly.elytron.web.undertow.server.servlet;
+
+import java.util.Collections;
 
 import org.wildfly.elytron.web.undertow.common.BasicAuthenticationBase;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
-
-import io.undertow.security.api.AuthenticationMode;
+import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer;
 
 /**
  * Test case to test HTTP BASIC authentication where authentication is backed by Elytron.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class BasicAuthenticationTest extends BasicAuthenticationBase {
+public class BasicServletAuthenticationTest extends BasicAuthenticationBase {
 
-    public BasicAuthenticationTest() throws Exception {
+    public BasicServletAuthenticationTest() throws Exception {
         super();
     }
 
     @Override
     protected UndertowServer createUndertowServer() throws Exception {
-        return UndertowCoreServer.builder()
+        return UndertowServletServer.builder()
+                .setAuthenticationMechanism(getMechanismName())
                 .setSecurityDomain(getSecurityDomain())
-                .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
-                .setAuthenticationMode(getAuthenticationMode())
+                .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()))
                 .build();
-    }
-
-    protected AuthenticationMode getAuthenticationMode() {
-        return null;
     }
 
 }

@@ -14,39 +14,44 @@
  * limitations under the License.
  */
 
-package org.wildfly.elytron.web.undertow.server;
+package org.wildfly.elytron.web.undertow.server.servlet;
+
+import java.util.Collections;
 
 import org.wildfly.elytron.web.undertow.common.ClientCertAuthenticationBase;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
+import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer;
 
 /**
  * Test case for CLIENT_CERT authentication.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ClientCertAuthenticationTest extends ClientCertAuthenticationBase {
+public class ClientCertServletAuthenticationTest extends ClientCertAuthenticationBase {
 
-    public ClientCertAuthenticationTest() throws Exception {
+    public ClientCertServletAuthenticationTest() throws Exception {
         super();
     }
 
+    @Override
     protected UndertowServer createUndertowServerA() throws Exception {
-        return UndertowCoreServer.builder()
+        return UndertowServletServer.builder()
+                .setAuthenticationMechanism(getMechanismName())
                 .setSecurityDomain(getSecurityDomain())
-                .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
+                .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()))
                 .setSslContext(getSSLContext(false))
                 .build();
     }
 
     @Override
     protected UndertowServer createUndertowServerB() throws Exception {
-        return UndertowCoreServer.builder()
+        return UndertowServletServer.builder()
+                .setAuthenticationMechanism(getMechanismName())
                 .setSecurityDomain(getSecurityDomain())
-                .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
-                .setPort(7777)
+                .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()))
                 .setSslContext(getSSLContext(true))
+                .setPort(7777)
                 .build();
     }
-
 
 }
