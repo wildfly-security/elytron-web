@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc.
+ * Copyright 2019 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package org.wildfly.elytron.web.undertow.server;
+package org.wildfly.elytron.web.undertow.server.servlet;
 
-import org.wildfly.elytron.web.undertow.common.BearerTokenAuthenticationBase;
+import java.util.Collections;
+
+import org.wildfly.elytron.web.undertow.common.FormAuthenticationBase;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
+import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer;
 
 /**
- * Test case to {@link org.wildfly.security.http.impl.BearerTokenAuthenticationMechanism}.
+ * Test case to test HTTP FORM authentication where authentication is backed by Elytron.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class BearerTokenAuthenticationTest extends BearerTokenAuthenticationBase {
+public class FormServletAuthenticationTest extends FormAuthenticationBase {
 
-    public BearerTokenAuthenticationTest() throws Exception {
+    public FormServletAuthenticationTest() throws Exception {
         super();
     }
 
     @Override
     protected UndertowServer createUndertowServer() throws Exception {
-        return UndertowCoreServer.builder()
+        return UndertowServletServer.builder()
+                .setAuthenticationMechanism(getMechanismName())
                 .setSecurityDomain(getSecurityDomain())
-                .setMechanismFactoryFunction(this::getHttpServerAuthenticationMechanismFactory)
+                .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()))
                 .build();
     }
 

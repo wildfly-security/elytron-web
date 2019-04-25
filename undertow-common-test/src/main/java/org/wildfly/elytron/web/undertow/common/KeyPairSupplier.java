@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.elytron.web.undertow.server.util;
+package org.wildfly.elytron.web.undertow.common;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -26,11 +26,11 @@ import java.util.function.Supplier;
 /**
  * @author Paul Ferraro
  */
-public class KeyPairSupplier implements Supplier<KeyPair> {
+class KeyPairSupplier implements Supplier<KeyPair> {
 
     private final KeyPair keyPair;
 
-    public KeyPairSupplier() {
+    KeyPairSupplier() {
         try {
             this.keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
         } catch (NoSuchAlgorithmException e) {

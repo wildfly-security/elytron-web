@@ -120,7 +120,11 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
      */
     @Override
     public SSLSession getSSLSession() {
-        return httpServerExchange.getConnection().getSslSession();
+        SSLSessionInfo sessionInfo = httpServerExchange.getConnection().getSslSessionInfo();
+        if (sessionInfo != null) {
+            return sessionInfo.getSSLSession();
+        }
+        return null;
     }
 
     @Override
