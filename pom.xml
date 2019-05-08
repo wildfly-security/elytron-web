@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>25</version>
+        <version>35</version>
     </parent>
 
     <groupId>org.wildfly.security.elytron-web</groupId>
@@ -59,7 +59,7 @@
         <version.org.jboss.spec.jboss-json-api_1.0_spec>1.0.0.Final</version.org.jboss.spec.jboss-json-api_1.0_spec>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.com.nimbusds.nimbus-jose-jwt>4.13.1</version.com.nimbusds.nimbus-jose-jwt>
-        <version.org.wildfly.checkstyle-config>1.0.6.Final</version.org.wildfly.checkstyle-config>
+        <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.surefire.plugin>2.19.1</version.surefire.plugin>
 
         <test.level>INFO</test.level>
