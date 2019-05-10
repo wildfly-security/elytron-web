@@ -45,7 +45,7 @@
 
     <properties>
         <version.io.undertow>2.0.13.Final</version.io.undertow>
-        <version.org.wildfly.security.elytron>1.9.0.CR4</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.9.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.5.0.Alpha4</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5.6</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.5</version.org.apache.httpcomponents.httpcore>
