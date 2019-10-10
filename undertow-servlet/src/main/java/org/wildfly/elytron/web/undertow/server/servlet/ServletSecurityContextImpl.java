@@ -18,6 +18,8 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -115,8 +117,11 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
     private static AuthConfigFactory getAuthConfigFactory() {
         try {
-            // TODO - PermissionCheck
-            return AuthConfigFactory.getFactory();
+            if (System.getSecurityManager() != null) {
+                return doPrivileged(AuthConfigFactory::getFactory);
+            } else {
+                return AuthConfigFactory.getFactory();
+            }
         } catch (Exception e) {
             // Logged at TRACE as this will be per request.
             log.trace("Unable to get AuthConfigFactory", e);
