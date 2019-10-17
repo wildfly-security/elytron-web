@@ -44,8 +44,8 @@
 
     <properties>
         <version.jboss.metadata>11.0.0.Final</version.jboss.metadata>
-        <version.org.jboss.spec.jacc>1.0.1.Final</version.org.jboss.spec.jacc>
-        <version.org.jboss.spec.jaspi>1.0.2.Final</version.org.jboss.spec.jaspi>
+        <version.org.jboss.spec.jacc>2.0.0.Final</version.org.jboss.spec.jacc>
+        <version.org.jboss.spec.jaspi>2.0.1.Final</version.org.jboss.spec.jaspi>
     </properties>
 
     <dependencies>
