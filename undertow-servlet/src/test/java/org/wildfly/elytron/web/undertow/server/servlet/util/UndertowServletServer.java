@@ -22,7 +22,7 @@ import javax.net.ssl.SSLContext;
 
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
 import org.wildfly.elytron.web.undertow.server.servlet.AuthenticationManager;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;

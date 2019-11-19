@@ -32,7 +32,13 @@ import org.junit.BeforeClass;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
-import org.wildfly.security.http.impl.ServerMechanismFactoryImpl;
+import org.wildfly.security.http.basic.BasicMechanismFactory;
+import org.wildfly.security.http.bearer.BearerMechanismFactory;
+import org.wildfly.security.http.cert.ClientCertMechanismFactory;
+import org.wildfly.security.http.digest.DigestMechanismFactory;
+import org.wildfly.security.http.form.FormMechanismFactory;
+import org.wildfly.security.http.spnego.SpnegoMechanismFactory;
+import org.wildfly.security.http.util.AggregateServerMechanismFactory;
 import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.http.util.PropertiesServerMechanismFactory;
 
@@ -100,7 +106,10 @@ public abstract class AbstractHttpServerMechanismTest {
     }
 
     protected HttpServerAuthenticationMechanismFactory getHttpServerAuthenticationMechanismFactory(Map<String, ?> properties) {
-        return new PropertiesServerMechanismFactory(new FilterServerMechanismFactory(new ServerMechanismFactoryImpl(), true, getMechanismName()), properties);
+        HttpServerAuthenticationMechanismFactory delegate = new AggregateServerMechanismFactory(new BasicMechanismFactory(), new BearerMechanismFactory(),
+                new ClientCertMechanismFactory(), new DigestMechanismFactory(), new FormMechanismFactory(),
+                new SpnegoMechanismFactory());
+        return new PropertiesServerMechanismFactory(new FilterServerMechanismFactory(delegate, true, getMechanismName()), properties);
     }
 
     protected abstract String getMechanismName();

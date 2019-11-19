@@ -55,7 +55,7 @@ import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.ssl.SSLContextBuilder;
-import org.wildfly.security.x500.X500AttributePrincipalDecoder;
+import org.wildfly.security.x500.principal.X500AttributePrincipalDecoder;
 
 
 /**

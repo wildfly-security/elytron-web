@@ -39,7 +39,7 @@ import java.util.function.UnaryOperator;
 import org.jboss.metadata.javaee.jboss.RunAsIdentityMetaData;
 import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
 import org.wildfly.elytron.web.undertow.server.ScopeSessionListener;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
