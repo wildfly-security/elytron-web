@@ -269,12 +269,6 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-auth-server-deprecated</artifactId>
-                <version>${version.org.wildfly.security.elytron}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-auth-server-http</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
                 <scope>provided</scope>
@@ -333,7 +327,37 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-http-deprecated</artifactId>
+                <artifactId>wildfly-elytron-http-basic</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-bearer</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-cert</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-digest</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-form</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-spnego</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
                 <scope>provided</scope>
             </dependency>
@@ -351,7 +375,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-x500-deprecated</artifactId>
+                <artifactId>wildfly-elytron-x500-principal</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
                 <scope>provided</scope>
             </dependency>
