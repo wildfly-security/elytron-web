@@ -1,6 +1,6 @@
 language: java
 jdk:
-- oraclejdk8
+- openjdk8
 install: echo LOL
 script: mvn -s .travis-settings.xml verify -B -fae
 env:

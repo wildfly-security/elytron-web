@@ -167,7 +167,9 @@ public class AuthenticationManager {
             }
         }
 
-        final String applicationContext = deploymentInfo.getHostName() + " " + deploymentInfo.getContextPath();
+        final String deploymentPath = deploymentInfo.getContextPath();
+        final String applicationContext = deploymentInfo.getHostName() + " "
+                + (deploymentPath.equals("/") ? "" : deploymentPath);
 
         HttpHandler contextAssociationHander = ElytronServletContextAssociationHandler.builder()
                 .setApplicationContext(applicationContext)
