@@ -388,6 +388,11 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         }
     }
 
+    @Override
+    public String getRemoteUser() {
+        return httpServerExchange.getAttachment(HttpServerExchange.REMOTE_USER);
+    }
+
     /**
      * Sub-types may override this method to define how {@link SessionManager} is obtained.
      *

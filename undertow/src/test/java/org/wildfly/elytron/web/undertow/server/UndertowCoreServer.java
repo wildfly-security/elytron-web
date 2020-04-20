@@ -107,6 +107,7 @@ public class UndertowCoreServer extends UndertowServer {
         private int port = 7776;
         private String deploymentName;
         private Supplier<SSLContext> serverSslContext;
+        private String remoteUser = null;
 
         public Builder setSecurityDomain(final SecurityDomain securityDomain) {
             this.securityDomain = securityDomain;
@@ -146,6 +147,12 @@ public class UndertowCoreServer extends UndertowServer {
 
         public Builder setSslContext(final Supplier<SSLContext> serverSslContext) {
             this.serverSslContext = serverSslContext;
+
+            return this;
+        }
+
+        public Builder setRemoteUser(final String remoteUser) {
+            this.remoteUser = remoteUser;
 
             return this;
         }
@@ -218,7 +225,11 @@ public class UndertowCoreServer extends UndertowServer {
 
                     sessionManager.registerSessionListener(sessionListener);
 
-                    elytronContextHandlerBuilder.setHttpExchangeSupplier(exchange -> new ElytronHttpExchange(exchange, Collections.emptyMap(), sessionListener));
+                    elytronContextHandlerBuilder.setHttpExchangeSupplier(exchange ->
+                            {
+                                exchange.putAttachment(HttpServerExchange.REMOTE_USER, remoteUser);
+                                return new ElytronHttpExchange(exchange, Collections.emptyMap(), sessionListener);
+                            });
 
                     sessionManager.start();
                 }
