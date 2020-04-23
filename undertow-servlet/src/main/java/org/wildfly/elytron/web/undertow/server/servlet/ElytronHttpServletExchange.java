@@ -51,6 +51,7 @@ import io.undertow.server.session.SessionConfig;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.api.Deployment;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import io.undertow.servlet.spec.HttpSessionImpl;
 import io.undertow.servlet.util.SavedRequest;
 
 /**
@@ -104,6 +105,10 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
 
     @Override
     protected SessionConfig getSessionConfig() {
+        return getSessionConfig(httpServerExchange);
+    }
+
+    private static SessionConfig getSessionConfig(HttpServerExchange httpServerExchange){
         ServletRequestContext servletRequestContext = httpServerExchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         return servletRequestContext.getCurrentServletContext().getSessionConfig();
     }
@@ -304,6 +309,13 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
             public void registerForNotification(Consumer<HttpScopeNotification> consumer) {
                 if (exists()) {
                     listener.registerListener(session.getId(), consumer);
+                }
+            }
+
+            @Override
+            public void changeSessionId() {
+                if (exists()) {
+                    ((HttpSessionImpl)session).getSession().changeSessionId(exchange, getSessionConfig(exchange));
                 }
             }
         };
