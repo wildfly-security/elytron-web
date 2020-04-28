@@ -47,6 +47,7 @@ import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.Scope;
 
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionConfig;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.api.Deployment;
@@ -159,7 +160,7 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
             case EXCHANGE:
                 return requestScope(httpServerExchange);
             case SESSION:
-                return sessionScope(httpServerExchange, scopeSessionListener);
+                return sessionScope(httpServerExchange, scopeSessionListener, getSessionManager(), getSessionConfig());
             default:
                 return super.getScope(scope);
         }
@@ -234,7 +235,7 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
         return null;
     }
 
-    private static HttpScope sessionScope(HttpServerExchange exchange, ScopeSessionListener listener) {
+    private static HttpScope sessionScope(HttpServerExchange exchange, ScopeSessionListener listener, SessionManager sessionManager, SessionConfig sessionConfig) {
         ServletRequestContext context = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
 
         return new HttpScope() {
@@ -282,6 +283,23 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
             }
 
             @Override
+            public boolean supportsChangeID() {
+                return true;
+            }
+
+            @Override
+            public boolean changeID() {
+                if (exists()) {
+                    Session session = sessionManager.getSession(exchange, sessionConfig);
+                    session.changeSessionId(exchange, sessionConfig);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            @Override
             public boolean invalidate() {
                 if (exists()) {
                     try {
@@ -294,6 +312,8 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
                 }
                 return false;
             }
+
+
 
             @Override
             public boolean supportsNotifications() {
