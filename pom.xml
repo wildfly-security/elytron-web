@@ -44,18 +44,18 @@
     </licenses>
 
     <properties>
-        <version.io.undertow>2.0.29.Final</version.io.undertow>
+        <version.io.undertow>2.0.30.Final</version.io.undertow>
         <version.org.wildfly.security.elytron>2.0.0.Alpha6</version.org.wildfly.security.elytron>
-        <version.org.wildfly.common>1.5.2.Final</version.org.wildfly.common>
-        <version.org.apache.httpcomponents.httpclient>4.5.10</version.org.apache.httpcomponents.httpclient>
-        <version.org.apache.httpcomponents.httpcore>4.4.12</version.org.apache.httpcomponents.httpcore>
+        <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
+        <version.org.apache.httpcomponents.httpclient>4.5.12</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpcore>4.4.13</version.org.apache.httpcomponents.httpcore>
         <version.org.jboss.logging>3.4.1.Final</version.org.jboss.logging>
         <version.org.jboss.logmanager>2.1.14.Final</version.org.jboss.logmanager>
         <version.org.jboss.logmanager.log4j-jboss>1.2.0.Final</version.org.jboss.logmanager.log4j-jboss>
         <version.org.jboss.modules>1.9.1.Final</version.org.jboss.modules>
         <version.org.jboss.xnio>3.7.3.Final</version.org.jboss.xnio>
         <version.junit.junit>4.11</version.junit.junit>
-        <version.org.infinispan>9.3.6.Final</version.org.infinispan>
+        <version.org.infinispan>9.3.8.Final</version.org.infinispan>
         <version.org.jboss.spec.jboss-json-api_1.0_spec>1.0.1.Final</version.org.jboss.spec.jboss-json-api_1.0_spec>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.com.nimbusds.nimbus-jose-jwt>8.2.1</version.com.nimbusds.nimbus-jose-jwt>
