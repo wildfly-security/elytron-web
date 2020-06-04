@@ -30,7 +30,7 @@
 
     <groupId>org.wildfly.security.elytron-web</groupId>
     <artifactId>elytron-web-parent</artifactId>
-    <version>2.0.0.Alpha4</version>
+    <version>2.0.0.Alpha5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>WildFly Elytron Web - Parent</name>
