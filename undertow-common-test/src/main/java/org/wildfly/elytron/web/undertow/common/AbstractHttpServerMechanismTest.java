@@ -36,6 +36,7 @@ import org.wildfly.security.http.basic.BasicMechanismFactory;
 import org.wildfly.security.http.bearer.BearerMechanismFactory;
 import org.wildfly.security.http.cert.ClientCertMechanismFactory;
 import org.wildfly.security.http.digest.DigestMechanismFactory;
+import org.wildfly.security.http.external.ExternalMechanismFactory;
 import org.wildfly.security.http.form.FormMechanismFactory;
 import org.wildfly.security.http.spnego.SpnegoMechanismFactory;
 import org.wildfly.security.http.util.AggregateServerMechanismFactory;
@@ -107,7 +108,7 @@ public abstract class AbstractHttpServerMechanismTest {
 
     protected HttpServerAuthenticationMechanismFactory getHttpServerAuthenticationMechanismFactory(Map<String, ?> properties) {
         HttpServerAuthenticationMechanismFactory delegate = new AggregateServerMechanismFactory(new BasicMechanismFactory(), new BearerMechanismFactory(),
-                new ClientCertMechanismFactory(), new DigestMechanismFactory(), new FormMechanismFactory(),
+                new ClientCertMechanismFactory(), new DigestMechanismFactory(), new ExternalMechanismFactory(), new FormMechanismFactory(),
                 new SpnegoMechanismFactory());
         return new PropertiesServerMechanismFactory(new FilterServerMechanismFactory(delegate, true, getMechanismName()), properties);
     }
