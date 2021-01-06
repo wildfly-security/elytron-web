@@ -113,6 +113,11 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-tests-common</artifactId>
+            <type>test-jar</type>
+         </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-deprecated</artifactId>
         </dependency>
         <dependency>
