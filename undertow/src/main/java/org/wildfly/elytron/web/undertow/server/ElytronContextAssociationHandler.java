@@ -24,6 +24,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.cache.IdentityCache;
+import org.wildfly.security.http.HttpExchangeSpi;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 
 import io.undertow.security.api.AuthenticationMode;
@@ -43,6 +45,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     private final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier;
+    private final Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier;
     private final AuthenticationMode authenticationMode;
 
     /**
@@ -54,6 +57,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchangeSupplier = checkNotNullParam("httpExchangeSupplier", builder.httpExchangeSupplier);
+        this.identityCacheSupplier = builder.identityCacheSupplier;
         this.authenticationMode = builder.authenticationMode;
     }
 
@@ -67,12 +71,14 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     }
 
     protected SecurityContextImpl.Builder populateSecurityContextBuilder(SecurityContextImpl.Builder builder, HttpServerExchange exchange) {
+        final ElytronHttpExchange httpExchange = this.httpExchangeSupplier.apply(exchange);
         return builder.setExchange(exchange)
-                .setProgramaticMechanismName(programaticMechanismName)
+                .setProgrammaticMechanismName(programaticMechanismName)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(mechanismSupplier)
                 .setAuthMode(authenticationMode)
-                .setHttpExchangeSupplier(this.httpExchangeSupplier.apply(exchange));
+                .setHttpExchange(httpExchange)
+                .setIdentityCacheSupplier( builder.identityCacheSupplier != null ? () -> identityCacheSupplier.apply(httpExchange) : null);
     }
 
     public static Builder builder() {
@@ -86,6 +92,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
         SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
+        Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier;
         AuthenticationMode authenticationMode;
 
         protected Builder() {
@@ -123,6 +130,13 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
 
         public Builder setAuthenticationMode(AuthenticationMode authMode) {
             this.authenticationMode = authMode;
+
+            return this;
+        }
+
+        public Builder setIdentityCacheSupplier(Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier) {
+            this.identityCacheSupplier = identityCacheSupplier;
+
             return this;
         }
 

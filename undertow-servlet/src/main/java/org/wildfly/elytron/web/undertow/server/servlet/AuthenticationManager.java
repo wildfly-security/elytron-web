@@ -41,7 +41,9 @@ import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
 import org.wildfly.elytron.web.undertow.server.ScopeSessionListener;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.cache.IdentityCache;
 import org.wildfly.security.http.HttpAuthenticationException;
+import org.wildfly.security.http.HttpExchangeSpi;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.Scope;
@@ -180,6 +182,7 @@ public class AuthenticationManager {
                 .setMechanismSupplier(() -> getAuthenticationMechanisms(selectedMechanisms))
                 .setAuthenticationMode(deploymentInfo.getAuthenticationMode())
                 .setHttpExchangeSupplier(httpServerExchange -> new ElytronHttpServletExchange(httpServerExchange, scopeSessionListener))
+                .setIdentityCacheSupplier(builder.identityCacheSupplier)
                 .build();
         return new CleanUpHandler(contextAssociationHander);
     }
@@ -221,6 +224,7 @@ public class AuthenticationManager {
         private Function<String, RunAsIdentityMetaData> runAsMapper;
         private boolean enableJaspi = true;
         private boolean integratedJapi = true;
+        private Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier;
 
         private boolean built = false;
 
@@ -338,6 +342,20 @@ public class AuthenticationManager {
         public Builder setIntegratedJaspi(final boolean integratedJaspi) {
             assertNotBuilt();
             this.integratedJapi = integratedJaspi;
+
+            return this;
+        }
+
+        /**
+         * Set a {@code Function} which can take a {@code HttpExchangeSpi} instance and convert it to an {@code IdentityCache},
+         * this allows for pluggable caching strategies such as SSO.
+         *
+         * @param identityCacheSupplier - A supplier of {@code IdentityCache} instances for the current {@code HttpExchangeSpi}.
+         * @return this {@link Builder}
+         */
+        public Builder setIdentityCacheSupplier(Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier) {
+            assertNotBuilt();
+            this.identityCacheSupplier = identityCacheSupplier;
 
             return this;
         }
