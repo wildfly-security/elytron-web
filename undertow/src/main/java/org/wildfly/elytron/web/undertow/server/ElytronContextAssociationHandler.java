@@ -20,6 +20,7 @@ package org.wildfly.elytron.web.undertow.server;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -41,11 +42,11 @@ import io.undertow.server.HttpServerExchange;
  */
 public class ElytronContextAssociationHandler extends AbstractSecurityContextAssociationHandler {
 
-    private final String programaticMechanismName;
+    private final String programmaticMechanismName;
     private final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier;
-    private final Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier;
+    private final BiFunction<HttpExchangeSpi, String, IdentityCache> identityCacheSupplier;
     private final AuthenticationMode authenticationMode;
 
     /**
@@ -53,7 +54,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
      */
     protected ElytronContextAssociationHandler(Builder builder) {
         super(checkNotNullParam("next", builder.next));
-        this.programaticMechanismName = builder.programaticMechanismName != null ? builder.programaticMechanismName : "Programatic";
+        this.programmaticMechanismName = builder.programmaticMechanismName != null ? builder.programmaticMechanismName : "Programmatic";
         this.securityDomain = builder.securityDomain;
         this.mechanismSupplier = checkNotNullParam("mechanismSupplier", builder.mechanismSupplier);
         this.httpExchangeSupplier = checkNotNullParam("httpExchangeSupplier", builder.httpExchangeSupplier);
@@ -73,12 +74,13 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     protected SecurityContextImpl.Builder populateSecurityContextBuilder(SecurityContextImpl.Builder builder, HttpServerExchange exchange) {
         final ElytronHttpExchange httpExchange = this.httpExchangeSupplier.apply(exchange);
         return builder.setExchange(exchange)
-                .setProgrammaticMechanismName(programaticMechanismName)
+                .setProgrammaticMechanismName(programmaticMechanismName)
                 .setSecurityDomain(securityDomain)
                 .setMechanismSupplier(mechanismSupplier)
                 .setAuthMode(authenticationMode)
                 .setHttpExchange(httpExchange)
-                .setIdentityCacheSupplier( builder.identityCacheSupplier != null ? () -> identityCacheSupplier.apply(httpExchange) : null);
+                .setIdentityCacheSupplier( identityCacheSupplier != null ?
+                        () -> identityCacheSupplier.apply(httpExchange, programmaticMechanismName) : null);
     }
 
     public static Builder builder() {
@@ -88,11 +90,11 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
     public static class Builder {
 
         HttpHandler next;
-        String programaticMechanismName;
+        String programmaticMechanismName;
         SecurityDomain securityDomain;
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         Function<HttpServerExchange, ElytronHttpExchange> httpExchangeSupplier = ElytronHttpExchange::new;
-        Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier;
+        BiFunction<HttpExchangeSpi, String, IdentityCache> identityCacheSupplier;
         AuthenticationMode authenticationMode;
 
         protected Builder() {
@@ -104,8 +106,13 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
             return this;
         }
 
-        public Builder setProgramaticMechanismName(final String programaticMechanismName) {
-            this.programaticMechanismName = programaticMechanismName;
+        @Deprecated
+        public Builder setProgramaticMechanismName(final String programmaticMechanismName) {
+            return this.setProgrammaticMechanismName(programmaticMechanismName);
+        }
+
+        public Builder setProgrammaticMechanismName(final String programmaticMechanismName) {
+            this.programmaticMechanismName = programmaticMechanismName;
 
             return this;
         }
@@ -134,7 +141,7 @@ public class ElytronContextAssociationHandler extends AbstractSecurityContextAss
             return this;
         }
 
-        public Builder setIdentityCacheSupplier(Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier) {
+        public Builder setIdentityCacheSupplier(BiFunction<HttpExchangeSpi, String, IdentityCache> identityCacheSupplier) {
             this.identityCacheSupplier = identityCacheSupplier;
 
             return this;

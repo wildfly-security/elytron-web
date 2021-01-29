@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -224,7 +225,7 @@ public class AuthenticationManager {
         private Function<String, RunAsIdentityMetaData> runAsMapper;
         private boolean enableJaspi = true;
         private boolean integratedJapi = true;
-        private Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier;
+        private BiFunction<HttpExchangeSpi, String, IdentityCache> identityCacheSupplier;
 
         private boolean built = false;
 
@@ -347,13 +348,13 @@ public class AuthenticationManager {
         }
 
         /**
-         * Set a {@code Function} which can take a {@code HttpExchangeSpi} instance and convert it to an {@code IdentityCache},
-         * this allows for pluggable caching strategies such as SSO.
+         * Set a {@code BiFunction} which can take a {@code HttpExchangeSpi} instance and the authentication mechanism name and convert
+         * it to an {@code IdentityCache}, this allows for pluggable caching strategies such as SSO.
          *
          * @param identityCacheSupplier - A supplier of {@code IdentityCache} instances for the current {@code HttpExchangeSpi}.
          * @return this {@link Builder}
          */
-        public Builder setIdentityCacheSupplier(Function<HttpExchangeSpi, IdentityCache> identityCacheSupplier) {
+        public Builder setIdentityCacheSupplier(BiFunction<HttpExchangeSpi, String, IdentityCache> identityCacheSupplier) {
             assertNotBuilt();
             this.identityCacheSupplier = identityCacheSupplier;
 
