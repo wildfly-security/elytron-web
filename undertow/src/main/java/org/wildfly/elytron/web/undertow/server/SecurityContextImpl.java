@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.wildfly.security.auth.server.FlexibleIdentityAssociation;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.cache.IdentityCache;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
@@ -52,7 +53,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     protected final SecurityDomain securityDomain;
     private final Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
     private final String programmaticMechanismName;
-
+    private Supplier<IdentityCache> identityCacheSupplier;
     private final FlexibleIdentityAssociation flexibleIdentityAssociation;
 
     private HttpAuthenticator httpAuthenticator;
@@ -66,6 +67,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         this.mechanismSupplier = builder.mechanismSupplier;
         this.programmaticMechanismName = builder.programmaticMechanismName;
         this.authMode = builder.authMode;
+        this.identityCacheSupplier = builder.identityCacheSupplier;
         if(securityDomain != null) {
             this.flexibleIdentityAssociation = securityDomain.getAnonymousSecurityIdentity().createFlexibleAssociation();
         } else {
@@ -84,6 +86,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
 
         this.httpAuthenticator = HttpAuthenticator.builder()
                 .setMechanismSupplier(checkNotNullParam("mechanismSupplier", mechanismSupplier))
+                .setIdentityCacheSupplier(identityCacheSupplier)
                 .setProgrammaticMechanismName(checkNotNullParam("programmaticMechanismName", programmaticMechanismName))
                 .setSecurityDomain(securityDomain)
                 .setHttpExchangeSpi(this.httpExchange)
@@ -180,6 +183,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier;
         ElytronHttpExchange httpExchange;
         AuthenticationMode authMode;
+        Supplier<IdentityCache> identityCacheSupplier;
 
         protected Builder() {
         }
@@ -218,8 +222,19 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return this;
         }
 
+        @Deprecated
         Builder setHttpExchangeSupplier(ElytronHttpExchange httpExchange) {
+            return setHttpExchange(httpExchange);
+        }
+
+        Builder setHttpExchange(ElytronHttpExchange httpExchange) {
             this.httpExchange = httpExchange;
+
+            return this;
+        }
+
+        Builder setIdentityCacheSupplier(Supplier<IdentityCache> identityCacheSupplier) {
+            this.identityCacheSupplier = identityCacheSupplier;
 
             return this;
         }
