@@ -20,6 +20,7 @@ package org.wildfly.elytron.web.undertow.common;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -36,11 +37,14 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509TrustManager;
+import javax.security.auth.x500.X500Principal;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.wildfly.security.auth.SupportLevel;
@@ -55,6 +59,8 @@ import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.ssl.SSLContextBuilder;
+import org.wildfly.security.ssl.test.util.CAGenerationTool;
+import org.wildfly.security.ssl.test.util.CAGenerationTool.Identity;
 import org.wildfly.security.x500.principal.X500AttributePrincipalDecoder;
 
 
@@ -64,6 +70,10 @@ import org.wildfly.security.x500.principal.X500AttributePrincipalDecoder;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public abstract class ClientCertAuthenticationBase extends AbstractHttpServerMechanismTest {
+
+    private static CAGenerationTool caGenerationTool = null;
+
+    private static final String TLS_LOCATION = "./target/test-classes/tls";
 
     protected ClientCertAuthenticationBase() throws Exception {
     }
@@ -77,6 +87,21 @@ public abstract class ClientCertAuthenticationBase extends AbstractHttpServerMec
     public UndertowServer serverB = createUndertowServerB();
 
     private AtomicInteger realmIdentityInvocationCount = new AtomicInteger(0);
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        caGenerationTool = CAGenerationTool.builder()
+                .setBaseDir(TLS_LOCATION)
+                .setRequestIdentities(Identity.LADYBIRD, Identity.SCARAB) // Create all identities.
+                .build();
+        caGenerationTool.createSelfSignedIdentity("tiger", new X500Principal("CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"),
+                "tiger.keystore");
+    }
+
+    @AfterClass
+    public static void afterClass() throws IOException {
+        caGenerationTool.close();
+    }
 
     @Test
     public void testSuccessfulAuthentication() throws Exception {
