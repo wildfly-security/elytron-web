@@ -44,8 +44,8 @@
     </licenses>
 
     <properties>
-        <version.io.undertow>2.2.3.Final</version.io.undertow>
-        <version.org.wildfly.security.elytron>1.15.0.Final</version.org.wildfly.security.elytron>
+        <version.io.undertow>2.2.7.Final</version.io.undertow>
+        <version.org.wildfly.security.elytron>1.15.3.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5.13</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.14</version.org.apache.httpcomponents.httpcore>
