@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.wildfly.security.elytron-web</groupId>
         <artifactId>elytron-web-parent</artifactId>
-        <version>1.9.1.CR1-SNAPSHOT</version>
+        <version>1.9.1.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
