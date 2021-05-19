@@ -56,7 +56,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private Supplier<IdentityCache> identityCacheSupplier;
     private final FlexibleIdentityAssociation flexibleIdentityAssociation;
 
-    private HttpAuthenticator httpAuthenticator;
+    private volatile HttpAuthenticator httpAuthenticator;
     private Runnable logoutHandler;
     private AuthenticationMode authMode;
 
@@ -75,6 +75,23 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
     }
 
+    private HttpAuthenticator getHttpAuthenticator() {
+        if (httpAuthenticator == null) {
+            this.httpAuthenticator = HttpAuthenticator.builder()
+                    .setMechanismSupplier(checkNotNullParam("mechanismSupplier", mechanismSupplier))
+                    .setIdentityCacheSupplier(identityCacheSupplier)
+                    .setProgrammaticMechanismName(checkNotNullParam("programmaticMechanismName", programmaticMechanismName))
+                    .setSecurityDomain(securityDomain)
+                    .setHttpExchangeSpi(this.httpExchange)
+                    .setRequired(isAuthenticationRequired())
+                    .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
+                    .registerLogoutHandler(this::setLogoutHandler)
+                    .build();
+        }
+
+        return httpAuthenticator;
+    }
+
     /**
      * @see io.undertow.security.api.SecurityContext#authenticate()
      */
@@ -84,16 +101,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
             return true;
         }
 
-        this.httpAuthenticator = HttpAuthenticator.builder()
-                .setMechanismSupplier(checkNotNullParam("mechanismSupplier", mechanismSupplier))
-                .setIdentityCacheSupplier(identityCacheSupplier)
-                .setProgrammaticMechanismName(checkNotNullParam("programmaticMechanismName", programmaticMechanismName))
-                .setSecurityDomain(securityDomain)
-                .setHttpExchangeSpi(this.httpExchange)
-                .setRequired(isAuthenticationRequired())
-                .setIgnoreOptionalFailures(false) // TODO - Cover this one later.
-                .registerLogoutHandler(this::setLogoutHandler)
-                .build();
+        HttpAuthenticator httpAuthenticator = getHttpAuthenticator();
 
         try {
             return httpAuthenticator.authenticate();
@@ -114,10 +122,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
      */
     @Override
     public boolean login(String username, String password) {
-        if (httpAuthenticator == null) {
-            log.trace("No HttpAuthenticator available for authentication.");
-            return false;
-        }
+        HttpAuthenticator httpAuthenticator = getHttpAuthenticator();
 
         SecurityIdentity securityIdentity = httpAuthenticator.login(username, password);
         if (securityIdentity != null) {
