@@ -18,8 +18,8 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import io.undertow.servlet.handlers.ServletRequestContext;
 

@@ -18,13 +18,13 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import static org.wildfly.elytron.web.undertow.server.servlet.IdentityMapping.performMapping;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletException;
+
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.function.Function;
-
-import javax.servlet.Filter;
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
 
 import org.jboss.metadata.javaee.jboss.RunAsIdentityMetaData;
 import org.wildfly.security.auth.server.SecurityDomain;
