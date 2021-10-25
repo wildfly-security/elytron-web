@@ -244,7 +244,7 @@
             </dependency>
             <dependency>
                 <groupId>io.undertow</groupId>
-                <artifactId>undertow-servlet</artifactId>
+                <artifactId>undertow-servlet-jakartaee9</artifactId>
                 <version>${version.io.undertow}</version>
                 <scope>provided</scope>
             </dependency>
