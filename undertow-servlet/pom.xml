@@ -117,8 +117,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-jaspi</artifactId>
+            <groupId>org.wildfly.security.jakarta</groupId>
+            <artifactId>jakarta-authentication</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
