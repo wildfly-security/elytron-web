@@ -139,12 +139,12 @@ public class AuthenticationManager {
         final Map<String, String> baseConfiguration = Collections.unmodifiableMap(tempBaseConfiguration);
 
         final Map<String, Map<String, String>> selectedMechanisms = new LinkedHashMap<>();
-        if (builder.overrideDeploymentConfig || (loginConfig == null)) {
+        if (builder.overrideDeploymentConfig) {
             final Map<String, String> mechanismConfiguration = baseConfiguration;
             for (String n : availableMechanisms) {
                 selectedMechanisms.put(n, mechanismConfiguration);
             }
-        } else {
+        } else if (loginConfig != null) {
             final List<AuthMethodConfig> authMethods = loginConfig.getAuthMethods();
             if (authMethods.isEmpty()) {
                 throw new IllegalStateException("No authentication mechanisms have been selected.");

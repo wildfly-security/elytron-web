@@ -194,7 +194,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
 
         Builder setExchange(HttpServerExchange exchange) {
-            this.exchange = exchange;
+            this.exchange = checkNotNullParam("exchange", exchange);
 
             return this;
         }
@@ -222,7 +222,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
 
         Builder setMechanismSupplier(Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier) {
-            this.mechanismSupplier = mechanismSupplier;
+            this.mechanismSupplier = checkNotNullParam("mechanismSupplier", mechanismSupplier);
 
             return this;
         }
@@ -233,7 +233,7 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         }
 
         Builder setHttpExchange(ElytronHttpExchange httpExchange) {
-            this.httpExchange = httpExchange;
+            this.httpExchange = checkNotNullParam("httpExchange", httpExchange);
 
             return this;
         }
