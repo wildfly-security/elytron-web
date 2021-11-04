@@ -16,13 +16,13 @@
 
 package org.wildfly.elytron.web.undertow.server.servlet;
 
+import jakarta.security.jacc.WebResourcePermission;
+import jakarta.security.jacc.WebRoleRefPermission;
+import jakarta.servlet.http.HttpServletRequest;
+
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.security.jacc.WebResourcePermission;
-import javax.security.jacc.WebRoleRefPermission;
-import javax.servlet.http.HttpServletRequest;
 
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;

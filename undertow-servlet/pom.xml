@@ -44,8 +44,8 @@
 
     <properties>
         <version.jboss.metadata>11.0.0.Final</version.jboss.metadata>
-        <version.org.jboss.spec.jacc>2.0.0.Final</version.org.jboss.spec.jacc>
-        <version.org.jboss.spec.jaspi>2.0.1.Final</version.org.jboss.spec.jaspi>
+        <version.jakarta.authentication>2.0.0</version.jakarta.authentication>
+        <version.jakarta.authorization>2.0.0</version.jakarta.authorization>
     </properties>
 
     <dependencies>
@@ -68,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>io.undertow</groupId>
-            <artifactId>undertow-servlet</artifactId>
+            <artifactId>undertow-servlet-jakartaee9</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -82,14 +82,14 @@
           <version>${version.jboss.metadata}</version>
         </dependency>
         <dependency>
-          <groupId>org.jboss.spec.javax.security.jacc</groupId>
-          <artifactId>jboss-jacc-api_1.5_spec</artifactId>
-          <version>${version.org.jboss.spec.jacc}</version>
+            <groupId>jakarta.authentication</groupId>
+            <artifactId>jakarta.authentication-api</artifactId>
+            <version>${version.jakarta.authentication}</version>
         </dependency>
         <dependency>
-          <groupId>org.jboss.spec.javax.security.auth.message</groupId>
-          <artifactId>jboss-jaspi-api_1.1_spec</artifactId>
-          <version>${version.org.jboss.spec.jaspi}</version>
+            <groupId>jakarta.authorization</groupId>
+            <artifactId>jakarta.authorization-api</artifactId>
+            <version>${version.jakarta.authorization}</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly.common</groupId>
@@ -117,8 +117,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-jaspi</artifactId>
+            <groupId>org.wildfly.security.jakarta</groupId>
+            <artifactId>jakarta-authentication</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -184,6 +184,11 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-deprecated</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-realm</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
