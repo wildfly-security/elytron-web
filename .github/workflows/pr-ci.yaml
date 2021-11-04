@@ -4,7 +4,8 @@ on:
     branches:
       - 1.9.x
       - 1.x
-      - master
+      - 2.x
+      - 3.x
 
 jobs:
   build:
