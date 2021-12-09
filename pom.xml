@@ -57,8 +57,8 @@
         <version.org.jboss.xnio>3.7.3.Final</version.org.jboss.xnio>
         <version.junit.junit>4.11</version.junit.junit>
         <version.org.infinispan>9.4.23.Final</version.org.infinispan>
-        <version.org.jboss.spec.jboss-json-api_1.0_spec>1.0.1.Final</version.org.jboss.spec.jboss-json-api_1.0_spec>
-        <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
+        <version.jakarta.json.jakarta-json-api>2.0.0</version.jakarta.json.jakarta-json-api>
+        <version.org.glassfish.jakarta.json>2.0.0</version.org.glassfish.jakarta.json>
         <version.com.nimbusds.nimbus-jose-jwt>8.2.1</version.com.nimbusds.nimbus-jose-jwt>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.surefire.plugin>2.19.1</version.surefire.plugin>
@@ -418,15 +418,15 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>org.jboss.spec.javax.json</groupId>
-                <artifactId>jboss-json-api_1.0_spec</artifactId>
-                <version>${version.org.jboss.spec.jboss-json-api_1.0_spec}</version>
+                <groupId>jakarta.json</groupId>
+                <artifactId>jakarta.json-api</artifactId>
+                <version>${version.jakarta.json.jakarta-json-api}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.glassfish</groupId>
-                <artifactId>javax.json</artifactId>
-                <version>${version.org.glassfish.javax.json}</version>
+                <artifactId>jakarta.json</artifactId>
+                <version>${version.org.glassfish.jakarta.json}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
