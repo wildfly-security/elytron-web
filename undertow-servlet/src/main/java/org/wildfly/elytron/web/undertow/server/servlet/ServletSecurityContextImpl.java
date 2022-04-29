@@ -20,6 +20,17 @@ import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
 import static java.security.AccessController.doPrivileged;
 
+import jakarta.security.auth.message.AuthException;
+import jakarta.security.auth.message.AuthStatus;
+import jakarta.security.auth.message.MessageInfo;
+import jakarta.security.auth.message.config.AuthConfigFactory;
+import jakarta.security.auth.message.config.AuthConfigProvider;
+import jakarta.security.auth.message.config.ServerAuthConfig;
+import jakarta.security.auth.message.config.ServerAuthContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -27,16 +38,6 @@ import java.util.Collections;
 import java.util.Map;
 
 import javax.security.auth.Subject;
-import javax.security.auth.message.AuthException;
-import javax.security.auth.message.AuthStatus;
-import javax.security.auth.message.MessageInfo;
-import javax.security.auth.message.config.AuthConfigFactory;
-import javax.security.auth.message.config.AuthConfigProvider;
-import javax.security.auth.message.config.ServerAuthConfig;
-import javax.security.auth.message.config.ServerAuthContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import org.jboss.logging.Logger;
 import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
@@ -56,10 +57,10 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
     private static final Logger log = Logger.getLogger("org.wildfly.security.http.servlet");
 
-    private static final String AUTH_TYPE = "javax.servlet.http.authType";
+    private static final String AUTH_TYPE = "jakarta.servlet.http.authType";
     private static final String DEFAULT_JASPI_MECHANISM = "JASPI";
-    private static final String MANDATORY = "javax.security.auth.message.MessagePolicy.isMandatory";
-    private static final String REGISTER_SESSION = "javax.servlet.http.registerSession";
+    private static final String MANDATORY = "jakarta.security.auth.message.MessagePolicy.isMandatory";
+    private static final String REGISTER_SESSION = "jakarta.servlet.http.registerSession";
 
     private static final String SERVLET_MESSAGE_LAYER = "HttpServlet";
     private static final String IDENTITY_KEY = IdentityContainer.class.getName();
@@ -154,8 +155,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         JaspiAuthenticationContext authenticationContext = doPrivileged((PrivilegedAction<JaspiAuthenticationContext>) () -> JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi));
 
         // TODO - PermissionCheck
-        ServerAuthConfig serverAuthConfig = authConfigProvider.getServerAuthConfig(SERVLET_MESSAGE_LAYER, applicationContext,
-                authenticationContext.createCallbackHandler());
+        ServerAuthConfig serverAuthConfig = authenticationContext.getServerAuthConfig(authConfigProvider, SERVLET_MESSAGE_LAYER, applicationContext);
 
         final HttpServletResponse httpServletResponse = requestResponseAccessor.getHttpServletResponse();
         // This is the stage where it is expected we become per-request.
