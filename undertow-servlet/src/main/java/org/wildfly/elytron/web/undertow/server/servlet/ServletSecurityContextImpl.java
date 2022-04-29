@@ -155,8 +155,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         JaspiAuthenticationContext authenticationContext = doPrivileged((PrivilegedAction<JaspiAuthenticationContext>) () -> JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi));
 
         // TODO - PermissionCheck
-        ServerAuthConfig serverAuthConfig = authConfigProvider.getServerAuthConfig(SERVLET_MESSAGE_LAYER, applicationContext,
-                authenticationContext.createCallbackHandler());
+        ServerAuthConfig serverAuthConfig = authenticationContext.getServerAuthConfig(authConfigProvider, SERVLET_MESSAGE_LAYER, applicationContext);
 
         final HttpServletResponse httpServletResponse = requestResponseAccessor.getHttpServletResponse();
         // This is the stage where it is expected we become per-request.
