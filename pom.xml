@@ -376,6 +376,12 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpmime</artifactId>
+                <version>${version.org.apache.httpcomponents.httpclient}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${version.org.apache.httpcomponents.httpcore}</version>
                 <scope>provided</scope>
