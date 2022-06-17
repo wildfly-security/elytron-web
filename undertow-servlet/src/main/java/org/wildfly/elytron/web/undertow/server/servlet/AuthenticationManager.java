@@ -82,8 +82,7 @@ public class AuthenticationManager {
                 .addScopeResolver(Scope.APPLICATION, APPLICATION_SCOPE_RESOLVER)
                 .build();
 
-        final HttpAuthenticationFactory httpAuthenticationFactory = builder.httpAuthenticationFactory;
-        final SecurityDomain securityDomain = httpAuthenticationFactory != null ? httpAuthenticationFactory.getSecurityDomain() : builder.securityDomain;
+        final SecurityDomain securityDomain = getSecurityDomain();
 
         if (System.getSecurityManager() != null) {
             doPrivileged((PrivilegedAction<Void>) () -> {
@@ -111,11 +110,25 @@ public class AuthenticationManager {
         }
     }
 
-    private HttpHandler initialSecurityHandler(final DeploymentInfo deploymentInfo, HttpHandler toWrap, SecurityDomain securityDomain, ScopeSessionListener scopeSessionListener) {
-        final HttpAuthenticationFactory httpAuthenticationFactory = builder.httpAuthenticationFactory;
-        final Collection<String> availableMechanisms;
-        if (httpAuthenticationFactory != null) {
+    private SecurityDomain getSecurityDomain() {
+        if (builder.httpAuthenticationFactory != null) {
+            return builder.httpAuthenticationFactory.getSecurityDomain();
+        } else if (builder.deprecatedHttpAuthenticationFactory != null) {
+            return builder.deprecatedHttpAuthenticationFactory.getSecurityDomain();
+        }
+
+        return builder.securityDomain;
+    }
+
+    private Collection<String> getAvailableMechanisms() {
+        Collection<String> availableMechanisms;
+        if (builder.httpAuthenticationFactory != null) {
             availableMechanisms = builder.httpAuthenticationFactory.getMechanismNames();
+            if (availableMechanisms.isEmpty()) {
+                throw new IllegalStateException("There are no mechanisms available from the HttpAuthenticationFactory.");
+            }
+        } else if (builder.deprecatedHttpAuthenticationFactory != null) {
+            availableMechanisms = builder.deprecatedHttpAuthenticationFactory.getMechanismNames();
             if (availableMechanisms.isEmpty()) {
                 throw new IllegalStateException("There are no mechanisms available from the HttpAuthenticationFactory.");
             }
@@ -123,6 +136,11 @@ public class AuthenticationManager {
             availableMechanisms = Collections.emptyList();
         }
 
+        return availableMechanisms;
+    }
+
+    private HttpHandler initialSecurityHandler(final DeploymentInfo deploymentInfo, HttpHandler toWrap, SecurityDomain securityDomain, ScopeSessionListener scopeSessionListener) {
+        final Collection<String> availableMechanisms = getAvailableMechanisms();
 
         Map<String, String> tempBaseConfiguration = new HashMap<>();
         tempBaseConfiguration.put(CONFIG_CONTEXT_PATH, deploymentInfo.getContextPath());
@@ -201,7 +219,9 @@ public class AuthenticationManager {
                     HttpServerAuthenticationMechanismFactory factory = new PropertiesServerMechanismFactory(f, entry.getValue());
                     return (singleSignOnTransformer != null) ? singleSignOnTransformer.apply(factory) : factory;
                 };
-                HttpServerAuthenticationMechanism mechanism =  builder.httpAuthenticationFactory.createMechanism(entry.getKey(), factoryTransformation);
+                HttpServerAuthenticationMechanism mechanism = builder.httpAuthenticationFactory != null
+                        ? builder.httpAuthenticationFactory.createMechanism(entry.getKey(), factoryTransformation)
+                        : builder.deprecatedHttpAuthenticationFactory.createMechanism(entry.getKey(), factoryTransformation);
                 if (mechanism != null) mechanisms.add(mechanism);
             } catch (HttpAuthenticationException e) {
                 throw new IllegalStateException(e);
@@ -218,6 +238,7 @@ public class AuthenticationManager {
     public static class Builder {
 
         private HttpAuthenticationFactory httpAuthenticationFactory;
+        private org.wildfly.security.auth.server.HttpAuthenticationFactory deprecatedHttpAuthenticationFactory;
         private SecurityDomain securityDomain;
         private boolean overrideDeploymentConfig;
         private AuthorizationManager authorizationManager;
@@ -244,6 +265,19 @@ public class AuthenticationManager {
                 throw new IllegalStateException("HttpAuthenticationFactory and SecurityDomain can not both be set at the same time.");
             }
             this.httpAuthenticationFactory = httpAuthenticationFactory;
+            this.deprecatedHttpAuthenticationFactory = null;
+
+            return this;
+        }
+
+        @Deprecated
+        public Builder setHttpAuthenticationFactory(final org.wildfly.security.auth.server.HttpAuthenticationFactory httpAuthenticationFactory) {
+            assertNotBuilt();
+            if (httpAuthenticationFactory != null && securityDomain != null) {
+                throw new IllegalStateException("HttpAuthenticationFactory and SecurityDomain can not both be set at the same time.");
+            }
+            this.deprecatedHttpAuthenticationFactory = httpAuthenticationFactory;
+            this.httpAuthenticationFactory = null;
 
             return this;
         }
@@ -259,7 +293,7 @@ public class AuthenticationManager {
          */
         public Builder setSecurityDomain(final SecurityDomain securityDomain) {
             assertNotBuilt();
-            if (httpAuthenticationFactory != null && securityDomain != null) {
+            if ((httpAuthenticationFactory != null || deprecatedHttpAuthenticationFactory != null)&& securityDomain != null) {
                 throw new IllegalStateException("HttpAuthenticationFactory and SecurityDomain can not both be set at the same time.");
             }
             this.securityDomain = securityDomain;
