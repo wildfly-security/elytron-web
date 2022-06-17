@@ -18,21 +18,9 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
-import static java.security.AccessController.doPrivileged;
-
-import jakarta.security.auth.message.AuthException;
-import jakarta.security.auth.message.AuthStatus;
-import jakarta.security.auth.message.MessageInfo;
-import jakarta.security.auth.message.config.AuthConfigFactory;
-import jakarta.security.auth.message.config.AuthConfigProvider;
-import jakarta.security.auth.message.config.ServerAuthConfig;
-import jakarta.security.auth.message.config.ServerAuthContext;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-
 import java.io.Serializable;
 import java.security.AccessController;
+import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
@@ -47,6 +35,17 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
+import jakarta.security.auth.message.AuthException;
+import jakarta.security.auth.message.AuthStatus;
+import jakarta.security.auth.message.MessageInfo;
+import jakarta.security.auth.message.config.AuthConfigFactory;
+import jakarta.security.auth.message.config.AuthConfigProvider;
+import jakarta.security.auth.message.config.ServerAuthConfig;
+import jakarta.security.auth.message.config.ServerAuthContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * An extension of {@link SecurityContextImpl} to add JASPIC / Servlet Profile Support.
@@ -132,27 +131,20 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
     }
 
     private boolean authenticate(AuthConfigProvider authConfigProvider) throws AuthException, SecurityException {
-        final HttpServletRequest httpServletRequest = requestResponseAccessor.getHttpServletRequest();
+        HttpServletRequest originalRequest = requestResponseAccessor.getHttpServletRequest();
 
-        HttpSession session = httpServletRequest.getSession(false);
+        HttpSession session = originalRequest.getSession(false);
+        IdentityContainer identityContainer = null;
+        SecurityIdentity cachedIdentity;
         if (session != null) {
-            IdentityContainer identityContainer = (IdentityContainer) session.getAttribute(IDENTITY_KEY);
-            if (identityContainer != null) {
-                SecurityIdentity securityIdentity = identityContainer.getSecurityIdentity();
-                String authType = identityContainer.getAuthType();
-                if (securityIdentity != null) {
-                    log.trace("SecurityIdentity restored from HttpSession");
-                    authenticationComplete(securityIdentity, authType != null ? authType : getMechanismName());
-                    return true;
-                }
-            } else {
-                session.removeAttribute(IDENTITY_KEY);
-            }
+            identityContainer = (IdentityContainer) session.getAttribute(IDENTITY_KEY);
         }
+        cachedIdentity = (identityContainer != null) ? identityContainer.getSecurityIdentity() : null;
+        final HttpServletRequest httpServletRequest = cachedIdentity != null ? new JakartaAuthenticationRequest(cachedIdentity, originalRequest) : originalRequest;
 
         // TODO A lot of the initialisation could have happened in advance if it wasn't for the CallbackHandler, maybe
         // we can use some form of contextual handler associated with the thread and a delegate.
-        JaspiAuthenticationContext authenticationContext = doPrivileged((PrivilegedAction<JaspiAuthenticationContext>) () -> JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi));
+        JaspiAuthenticationContext authenticationContext = doPrivileged((PrivilegedAction<JaspiAuthenticationContext>) () -> JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi, cachedIdentity));
 
         // TODO - PermissionCheck
         ServerAuthConfig serverAuthConfig = authenticationContext.getServerAuthConfig(authConfigProvider, SERVLET_MESSAGE_LAYER, applicationContext);
@@ -196,6 +188,9 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
             if (authStatus == AuthStatus.SUCCESS) {
                 HttpServletRequest newHttpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
                 if (httpServletRequest != newHttpServletRequest) {
+                    if (httpServletRequest instanceof JakartaAuthenticationRequest) {
+                        ((JakartaAuthenticationRequest) httpServletRequest).stopUsingCachedIdentity();
+                    }
                     requestResponseAccessor.setHttpServletRequest(newHttpServletRequest);
                 }
                 HttpServletResponse newHttpServletResponse = (HttpServletResponse) messageInfo.getResponseMessage();
@@ -254,6 +249,9 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
                 // Restore the request / response objects if an unwrapping occured.
                 HttpServletRequest newHttpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
                 if (httpServletRequest != newHttpServletRequest) {
+                    if (newHttpServletRequest instanceof JakartaAuthenticationRequest) {
+                        newHttpServletRequest = ((JakartaAuthenticationRequest)newHttpServletRequest).getOriginal();
+                    }
                     requestResponseAccessor.setHttpServletRequest(newHttpServletRequest);
                 }
                 HttpServletResponse newHttpServletResponse = (HttpServletResponse) messageInfo.getResponseMessage();
@@ -328,6 +326,38 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
         String getAuthType() {
             return authType;
+        }
+
+    }
+
+    static class JakartaAuthenticationRequest extends HttpServletRequestWrapper {
+
+        private final SecurityIdentity cachedIdentity;
+        private volatile boolean useCachedIdentity = true;
+        private final HttpServletRequest originalRequest;
+
+        JakartaAuthenticationRequest(final SecurityIdentity cachedIdentity, final HttpServletRequest originalRequest) {
+            super(originalRequest);
+            this.cachedIdentity = cachedIdentity;
+            this.originalRequest = originalRequest;
+        }
+
+        @Override
+        public Principal getUserPrincipal() {
+            return useCachedIdentity ? cachedIdentity.getPrincipal() : super.getUserPrincipal();
+        }
+
+        @Override
+        public boolean isUserInRole(String role) {
+            return useCachedIdentity ? cachedIdentity.getRoles().contains(role) : super.isUserInRole(role);
+        }
+
+        void stopUsingCachedIdentity() {
+            useCachedIdentity = false;
+        }
+
+        HttpServletRequest getOriginal() {
+            return originalRequest;
         }
 
     }
