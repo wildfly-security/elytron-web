@@ -53,7 +53,7 @@
         <version.org.jboss.logmanager>2.1.14.Final</version.org.jboss.logmanager>
         <version.org.jboss.logmanager.log4j-jboss>1.2.0.Final</version.org.jboss.logmanager.log4j-jboss>
         <version.org.jboss.modules>1.9.1.Final</version.org.jboss.modules>
-        <version.org.jboss.xnio>3.7.3.Final</version.org.jboss.xnio>
+        <version.org.jboss.xnio>3.8.7.Final</version.org.jboss.xnio>
         <version.junit.junit>4.11</version.junit.junit>
         <version.org.infinispan>9.4.23.Final</version.org.infinispan>
         <version.org.jboss.spec.jboss-json-api_1.0_spec>1.0.1.Final</version.org.jboss.spec.jboss-json-api_1.0_spec>
