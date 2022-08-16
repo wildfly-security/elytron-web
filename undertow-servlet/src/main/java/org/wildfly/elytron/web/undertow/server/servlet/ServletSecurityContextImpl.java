@@ -46,6 +46,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
+import org.wildfly.security.cache.CachedIdentity;
 
 /**
  * An extension of {@link SecurityContextImpl} to add JASPIC / Servlet Profile Support.
@@ -137,7 +138,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         if (session != null) {
             IdentityContainer identityContainer = (IdentityContainer) session.getAttribute(IDENTITY_KEY);
             if (identityContainer != null) {
-                SecurityIdentity securityIdentity = identityContainer.getSecurityIdentity();
+                SecurityIdentity securityIdentity = identityContainer.getSecurityIdentity().getSecurityIdentity();
                 String authType = identityContainer.getAuthType();
                 if (securityIdentity != null) {
                     log.trace("SecurityIdentity restored from HttpSession");
@@ -187,7 +188,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         boolean registerSession = options.containsKey(REGISTER_SESSION) && Boolean.parseBoolean(String.valueOf(options.get(REGISTER_SESSION)));
         if ((authStatus == AuthStatus.SUCCESS || (authStatus == AuthStatus.SEND_SUCCESS && registerSession))) {
             String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName(DEFAULT_JASPI_MECHANISM);
-            SecurityIdentity securityIdentity = authenticationContext.getAuthorizedIdentity();
+            CachedIdentity securityIdentity = new CachedIdentity(DEFAULT_JASPI_MECHANISM, true, authenticationContext.getAuthorizedIdentity());
             if (registerSession) {
                 log.trace("Storing SecurityIdentity in HttpSession");
                 session = httpServletRequest.getSession(true);
@@ -205,7 +206,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
                 boolean success = false;
                 if (securityIdentity != null) {
-                    authenticationComplete(securityIdentity, authType);
+                    authenticationComplete(securityIdentity.getSecurityIdentity(), authType);
                     success = true;
                 }
 
@@ -310,23 +311,23 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
     }
 
-    static class IdentityContainer implements Serializable {
+    public static class IdentityContainer implements Serializable {
 
         private static final long serialVersionUID = 812605442632466511L;
 
-        private volatile SecurityIdentity securityIdentity;
-        private volatile String authType;
+        private final CachedIdentity securityIdentity;
+        private final String authType;
 
-        IdentityContainer(final SecurityIdentity securityIdentity, final String authType) {
+        public IdentityContainer(final CachedIdentity securityIdentity, final String authType) {
             this.securityIdentity = securityIdentity;
             this.authType = authType;
         }
 
-        SecurityIdentity getSecurityIdentity() {
+        public CachedIdentity getSecurityIdentity() {
             return securityIdentity;
         }
 
-        String getAuthType() {
+        public String getAuthType() {
             return authType;
         }
 
