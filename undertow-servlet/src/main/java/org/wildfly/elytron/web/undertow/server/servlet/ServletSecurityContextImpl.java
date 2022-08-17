@@ -188,7 +188,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         boolean registerSession = options.containsKey(REGISTER_SESSION) && Boolean.parseBoolean(String.valueOf(options.get(REGISTER_SESSION)));
         if ((authStatus == AuthStatus.SUCCESS || (authStatus == AuthStatus.SEND_SUCCESS && registerSession))) {
             String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName(DEFAULT_JASPI_MECHANISM);
-            CachedIdentity securityIdentity = new CachedIdentity(DEFAULT_JASPI_MECHANISM, true, authenticationContext.getAuthorizedIdentity());
+            CachedIdentity securityIdentity = authenticationContext.getAuthorizedIdentity() != null ? new CachedIdentity(DEFAULT_JASPI_MECHANISM, true, authenticationContext.getAuthorizedIdentity()) : null;
             if (registerSession) {
                 log.trace("Storing SecurityIdentity in HttpSession");
                 session = httpServletRequest.getSession(true);
