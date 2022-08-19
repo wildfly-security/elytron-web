@@ -42,11 +42,10 @@ import org.jboss.logging.Logger;
 import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
 import org.wildfly.security.auth.jaspi.impl.JaspiAuthenticationContext;
 import org.wildfly.security.auth.jaspi.impl.ServletMessageInfo;
-import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.cache.CachedIdentity;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
-import org.wildfly.security.cache.CachedIdentity;
 
 /**
  * An extension of {@link SecurityContextImpl} to add JASPIC / Servlet Profile Support.
@@ -138,11 +137,11 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         if (session != null) {
             IdentityContainer identityContainer = (IdentityContainer) session.getAttribute(IDENTITY_KEY);
             if (identityContainer != null) {
-                SecurityIdentity securityIdentity = identityContainer.getSecurityIdentity().getSecurityIdentity();
+                CachedIdentity securityIdentity = identityContainer.getSecurityIdentity();
                 String authType = identityContainer.getAuthType();
                 if (securityIdentity != null) {
                     log.trace("SecurityIdentity restored from HttpSession");
-                    authenticationComplete(securityIdentity, authType != null ? authType : getMechanismName());
+                    authenticationComplete(securityIdentity.getSecurityIdentity(), authType != null ? authType : getMechanismName());
                     return true;
                 }
             } else {
@@ -188,11 +187,11 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         boolean registerSession = options.containsKey(REGISTER_SESSION) && Boolean.parseBoolean(String.valueOf(options.get(REGISTER_SESSION)));
         if ((authStatus == AuthStatus.SUCCESS || (authStatus == AuthStatus.SEND_SUCCESS && registerSession))) {
             String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName(DEFAULT_JASPI_MECHANISM);
-            CachedIdentity securityIdentity = authenticationContext.getAuthorizedIdentity() != null ? new CachedIdentity(DEFAULT_JASPI_MECHANISM, true, authenticationContext.getAuthorizedIdentity()) : null;
+            CachedIdentity cachedIdentity = authenticationContext.getAuthorizedIdentity() != null ? new CachedIdentity(DEFAULT_JASPI_MECHANISM, true, authenticationContext.getAuthorizedIdentity()) : null;
             if (registerSession) {
                 log.trace("Storing SecurityIdentity in HttpSession");
                 session = httpServletRequest.getSession(true);
-                session.setAttribute(IDENTITY_KEY, new IdentityContainer(securityIdentity, authType));
+                session.setAttribute(IDENTITY_KEY, new IdentityContainer(cachedIdentity, authType));
             }
             if (authStatus == AuthStatus.SUCCESS) {
                 HttpServletRequest newHttpServletRequest = (HttpServletRequest) messageInfo.getRequestMessage();
@@ -205,8 +204,8 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
                 }
 
                 boolean success = false;
-                if (securityIdentity != null) {
-                    authenticationComplete(securityIdentity.getSecurityIdentity(), authType);
+                if (cachedIdentity != null) {
+                    authenticationComplete(cachedIdentity.getSecurityIdentity(), authType);
                     success = true;
                 }
 
@@ -330,6 +329,5 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         public String getAuthType() {
             return authType;
         }
-
     }
 }
