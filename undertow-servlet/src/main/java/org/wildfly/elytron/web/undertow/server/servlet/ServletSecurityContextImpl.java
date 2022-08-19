@@ -31,7 +31,7 @@ import org.jboss.logging.Logger;
 import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
 import org.wildfly.security.auth.jaspi.impl.JaspiAuthenticationContext;
 import org.wildfly.security.auth.jaspi.impl.ServletMessageInfo;
-import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.cache.CachedIdentity;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
@@ -135,7 +135,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
         HttpSession session = originalRequest.getSession(false);
         IdentityContainer identityContainer = null;
-        SecurityIdentity cachedIdentity;
+        CachedIdentity cachedIdentity;
         if (session != null) {
             identityContainer = (IdentityContainer) session.getAttribute(IDENTITY_KEY);
         }
@@ -144,7 +144,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
         // TODO A lot of the initialisation could have happened in advance if it wasn't for the CallbackHandler, maybe
         // we can use some form of contextual handler associated with the thread and a delegate.
-        JaspiAuthenticationContext authenticationContext = doPrivileged((PrivilegedAction<JaspiAuthenticationContext>) () -> JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi, cachedIdentity));
+        JaspiAuthenticationContext authenticationContext = doPrivileged((PrivilegedAction<JaspiAuthenticationContext>) () -> JaspiAuthenticationContext.newInstance(securityDomain, integratedJaspi, cachedIdentity != null ? cachedIdentity.getSecurityIdentity() : null));
 
         // TODO - PermissionCheck
         ServerAuthConfig serverAuthConfig = authenticationContext.getServerAuthConfig(authConfigProvider, SERVLET_MESSAGE_LAYER, applicationContext);
@@ -179,7 +179,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         boolean registerSession = options.containsKey(REGISTER_SESSION) && Boolean.parseBoolean(String.valueOf(options.get(REGISTER_SESSION)));
         if ((authStatus == AuthStatus.SUCCESS || (authStatus == AuthStatus.SEND_SUCCESS && registerSession))) {
             String authType = options.containsKey(AUTH_TYPE) ? String.valueOf(options.get(AUTH_TYPE)) : getMechanismName(DEFAULT_JASPI_MECHANISM);
-            SecurityIdentity securityIdentity = authenticationContext.getAuthorizedIdentity();
+            CachedIdentity securityIdentity = authenticationContext.getAuthorizedIdentity() != null ? new CachedIdentity(DEFAULT_JASPI_MECHANISM, true, authenticationContext.getAuthorizedIdentity()) : null;
             if (registerSession) {
                 log.trace("Storing SecurityIdentity in HttpSession");
                 session = httpServletRequest.getSession(true);
@@ -200,7 +200,7 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
                 boolean success = false;
                 if (securityIdentity != null) {
-                    authenticationComplete(securityIdentity, authType);
+                    authenticationComplete(securityIdentity.getSecurityIdentity(), authType);
                     success = true;
                 }
 
@@ -308,35 +308,34 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
     }
 
-    static class IdentityContainer implements Serializable {
+    public static class IdentityContainer implements Serializable {
 
         private static final long serialVersionUID = 812605442632466511L;
 
-        private volatile SecurityIdentity securityIdentity;
-        private volatile String authType;
+        private final CachedIdentity securityIdentity;
+        private final String authType;
 
-        IdentityContainer(final SecurityIdentity securityIdentity, final String authType) {
+        public IdentityContainer(final CachedIdentity securityIdentity, final String authType) {
             this.securityIdentity = securityIdentity;
             this.authType = authType;
         }
 
-        SecurityIdentity getSecurityIdentity() {
+        public CachedIdentity getSecurityIdentity() {
             return securityIdentity;
         }
 
-        String getAuthType() {
+        public String getAuthType() {
             return authType;
         }
-
     }
 
     static class JakartaAuthenticationRequest extends HttpServletRequestWrapper {
 
-        private final SecurityIdentity cachedIdentity;
+        private final CachedIdentity cachedIdentity;
         private volatile boolean useCachedIdentity = true;
         private final HttpServletRequest originalRequest;
 
-        JakartaAuthenticationRequest(final SecurityIdentity cachedIdentity, final HttpServletRequest originalRequest) {
+        JakartaAuthenticationRequest(final CachedIdentity cachedIdentity, final HttpServletRequest originalRequest) {
             super(originalRequest);
             this.cachedIdentity = cachedIdentity;
             this.originalRequest = originalRequest;
@@ -344,12 +343,12 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
         @Override
         public Principal getUserPrincipal() {
-            return useCachedIdentity ? cachedIdentity.getPrincipal() : super.getUserPrincipal();
+            return useCachedIdentity ? cachedIdentity.getSecurityIdentity().getPrincipal() : super.getUserPrincipal();
         }
 
         @Override
         public boolean isUserInRole(String role) {
-            return useCachedIdentity ? cachedIdentity.getRoles().contains(role) : super.isUserInRole(role);
+            return useCachedIdentity ? cachedIdentity.getSecurityIdentity().getRoles().contains(role) : super.isUserInRole(role);
         }
 
         void stopUsingCachedIdentity() {
