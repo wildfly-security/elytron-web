@@ -31,6 +31,8 @@ import org.jboss.logging.Logger;
 import org.wildfly.elytron.web.undertow.server.SecurityContextImpl;
 import org.wildfly.security.auth.jaspi.impl.JaspiAuthenticationContext;
 import org.wildfly.security.auth.jaspi.impl.ServletMessageInfo;
+import org.wildfly.security.auth.principal.NamePrincipal;
+import org.wildfly.security.authz.Roles;
 import org.wildfly.security.cache.CachedIdentity;
 
 import io.undertow.security.api.SecurityContext;
@@ -343,12 +345,28 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
 
         @Override
         public Principal getUserPrincipal() {
-            return useCachedIdentity ? cachedIdentity.getSecurityIdentity().getPrincipal() : super.getUserPrincipal();
+            if (useCachedIdentity) {
+                if (cachedIdentity.getSecurityIdentity() != null) {
+                    return cachedIdentity.getSecurityIdentity().getPrincipal();
+                } else {
+                    return new NamePrincipal(cachedIdentity.getName());
+                }
+            } else {
+                return super.getUserPrincipal();
+            }
         }
 
         @Override
         public boolean isUserInRole(String role) {
-            return useCachedIdentity ? cachedIdentity.getSecurityIdentity().getRoles().contains(role) : super.isUserInRole(role);
+            if (useCachedIdentity) {
+                if (cachedIdentity.getSecurityIdentity() != null) {
+                    return cachedIdentity.getSecurityIdentity().getRoles().contains(role);
+                } else {
+                    return Roles.fromSet(cachedIdentity.getRoles()).contains(role);
+                }
+            } else {
+                return super.isUserInRole(role);
+            }
         }
 
         void stopUsingCachedIdentity() {
