@@ -47,7 +47,7 @@
         <version.io.undertow>2.2.18.Final</version.io.undertow>
         <version.org.wildfly.security.elytron>2.0.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
-        <version.org.wildfly.security.jakarta.elytron-ee>3.0.0.Beta2</version.org.wildfly.security.jakarta.elytron-ee>
+        <version.org.wildfly.security.jakarta.elytron-ee>3.0.0.Final</version.org.wildfly.security.jakarta.elytron-ee>
         <version.org.apache.httpcomponents.httpclient>4.5.13</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.15</version.org.apache.httpcomponents.httpcore>
         <version.org.jboss.logging>3.4.3.Final</version.org.jboss.logging>
