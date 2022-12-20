@@ -82,7 +82,14 @@ public class UndertowServletServer extends UndertowServer {
                         Servlets.servlet(LoginServlet.class)
                             .addMapping("/login"),
                         Servlets.servlet(LogoutServlet.class)
-                            .addMapping("/logout"));
+                            .addMapping("/logout"),
+                        Servlets.servlet(InputStreamServlet.class)
+                            .addMapping("/input-stream"),
+                        Servlets.servlet(ParametersServlet.class)
+                            .addMapping("/parameters"),
+                        Servlets.servlet(MultiPartServlet.class)
+                            .addMapping("/multipart")
+                            .setMultipartConfig(Servlets.multipartConfig(null, 0, 0, 0)));
 
         HttpAuthenticationFactory httpAuthenticationFactory =  HttpAuthenticationFactory.builder()
                 .setFactory(httpServerAuthenticationMechanismFactory)

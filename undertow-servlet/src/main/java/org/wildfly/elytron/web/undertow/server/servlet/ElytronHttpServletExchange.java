@@ -20,12 +20,17 @@ import static org.wildfly.security.http.HttpConstants.OK;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -46,13 +51,19 @@ import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.Scope;
 
+import io.undertow.io.Receiver;
+import io.undertow.server.Connectors;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.form.FormData;
+import io.undertow.server.handlers.form.FormDataParser;
 import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionConfig;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.api.Deployment;
+import io.undertow.servlet.core.ManagedServlet;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.servlet.util.SavedRequest;
+import io.undertow.util.ImmediatePooledByteBuffer;
 
 /**
  * An extension of {@link ElytronHttpExchange} which adds servlet container specific integrations.
@@ -87,15 +98,26 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
                 ServletRequestContext servletRequestContext = httpServerExchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
                 ServletRequest servletRequest = servletRequestContext.getServletRequest();
                 if (servletRequest instanceof HttpServletRequest) {
-                    HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-                    Map<String, String[]> parameters = httpServletRequest.getParameterMap();
-                    Map<String, List<String>> requestParameters = new HashMap<>(parameters.size());
-                    for (Entry<String, String[]> entry : parameters.entrySet()) {
-                        requestParameters.put(entry.getKey(), Collections.unmodifiableList(Arrays.asList(entry.getValue())));
+                    HttpServletRequest replayRequest = parseFormDataForReplay(httpServerExchange, servletRequestContext, (HttpServletRequest) servletRequest);
+                    if (replayRequest != null) {
+                        // replay is in place so normal processing
+                        Map<String, String[]> parameterMap = replayRequest.getParameterMap();
+                        Map<String, List<String>> parameters = new HashMap<>(parameterMap.size());
+                        for (Entry<String, String[]> entry : parameterMap.entrySet()) {
+                            parameters.put(entry.getKey(), Collections.unmodifiableList(Arrays.asList(entry.getValue())));
+                        }
+                        this.requestParameters = Collections.unmodifiableMap(parameters);
+                    } else {
+                        // only manage query parameters for this request
+                        HashMap<String, List<String>> parameters = new HashMap<>();
+                        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
+                        for (Map.Entry<String, Deque<String>> e : queryParameters.entrySet()) {
+                            parameters.put(e.getKey(), Collections.unmodifiableList(new ArrayList<>(e.getValue())));
+                        }
+                        requestParameters = Collections.unmodifiableMap(parameters);
                     }
-                    this.requestParameters = Collections.unmodifiableMap(requestParameters);
                 } else {
-                    return super.getRequestParameters();
+                    requestParameters = super.getRequestParameters();
                 }
             }
         }
@@ -329,6 +351,49 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
         };
     }
 
+    private static HttpServletRequest parseFormDataForReplay(final HttpServerExchange exchange,
+        final ServletRequestContext servletRequestContext, final HttpServletRequest request) {
+        final int maxBufferSizeToSave = SavedRequest.getMaxBufferSizeToSave(exchange);
+        if (exchange.getRequestContentLength() > 0 && exchange.getRequestContentLength() <= maxBufferSizeToSave) {
+            try {
+                // if the size is allowed to be buffered read bytes for replay
+                final ManagedServlet originalServlet = servletRequestContext.getCurrentServlet().getManagedServlet();
+                final FormDataParser parser = originalServlet.getFormParserFactory().createParser(exchange);
+                if (parser != null) {
+                    final CompletableFuture<BytesCallback> future = new CompletableFuture<>();
+                    BytesCallback callback = new BytesCallback(future);
+                    Receiver receiver = exchange.getRequestReceiver();
+                    receiver.setMaxBufferSize(maxBufferSizeToSave);
+                    receiver.receiveFullBytes(callback, callback);
+
+                    // wait the callback as getRequestParameters is a blocking method
+                    callback = future.get();
+                    if (callback.isError()) {
+                        throw callback.getError();
+                    }
+
+                    // the bytes are in the callback so replay and parse form data
+                    Connectors.ungetRequestBytes(exchange, new ImmediatePooledByteBuffer(ByteBuffer.wrap(callback.getBytes(), 0, callback.getBytes().length)));
+                    Connectors.resetRequestChannel(exchange);
+
+                    // we need to replay InputStream for parsing too
+                    servletRequestContext.setServletRequest(new ReplayHttpServletRequestWrapper(request, null, callback.getBytes()));
+                    FormData data = parser.parseBlocking();
+
+                    // now do the replay for the application
+                    HttpServletRequest replayRequest = new ReplayHttpServletRequestWrapper((HttpServletRequest) request, data, callback.getBytes());
+                    servletRequestContext.setServletRequest(replayRequest);
+
+                    return replayRequest;
+                }
+            } catch (IOException | InterruptedException | ExecutionException e) {
+                log.tracef(e, "Error reading form parameters from exchange %s", exchange);
+                servletRequestContext.setServletRequest(request);
+            }
+        }
+        return null;
+    }
+
     private static class FormResponseWrapper extends HttpServletResponseWrapper {
 
         private int status = OK;
@@ -354,4 +419,45 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
 
     }
 
+    /**
+     * Helper class to receive data bytes and replay them for the InputStream.
+     */
+    private static class BytesCallback implements Receiver.FullBytesCallback, Receiver.ErrorCallback {
+
+        private final CompletableFuture<BytesCallback> future;
+        private byte[] bytes;
+        private IOException error;
+
+        BytesCallback(CompletableFuture<BytesCallback> future) {
+            this.future = future;
+        }
+
+        @Override
+        public void handle(HttpServerExchange hse, byte[] bytes) {
+            this.bytes = bytes;
+            future.complete(this);
+        }
+
+        @Override
+        public void error(HttpServerExchange hse, IOException ioe) {
+            this.error = ioe;
+            future.complete(this);
+        }
+
+        public byte[] getBytes() {
+            return bytes;
+        }
+
+        public boolean hasBytes() {
+            return bytes != null;
+        }
+
+        public IOException getError() {
+            return error;
+        }
+
+        public boolean isError() {
+            return error != null;
+        }
+    }
 }
