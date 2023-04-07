@@ -42,6 +42,18 @@
         </license>
     </licenses>
 
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>META-INF/services/*</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
     <properties>
         <version.jboss.metadata>11.0.0.Final</version.jboss.metadata>
         <version.jakarta.authentication>2.0.0</version.jakarta.authentication>
@@ -123,6 +135,11 @@
         <dependency>
             <groupId>org.wildfly.security.jakarta</groupId>
             <artifactId>jakarta-authentication</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.security.jakarta</groupId>
+            <artifactId>jakarta-authorization</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
