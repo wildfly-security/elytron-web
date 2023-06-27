@@ -44,7 +44,7 @@
     </licenses>
 
     <properties>
-        <version.io.undertow>2.2.18.Final</version.io.undertow>
+        <version.io.undertow>2.3.7.Final</version.io.undertow>
         <version.org.wildfly.security.elytron>2.0.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.1.Final</version.org.wildfly.security.jakarta.elytron-ee>
@@ -245,7 +245,7 @@
             </dependency>
             <dependency>
                 <groupId>io.undertow</groupId>
-                <artifactId>undertow-servlet-jakarta</artifactId>
+                <artifactId>undertow-servlet</artifactId>
                 <version>${version.io.undertow}</version>
                 <scope>provided</scope>
             </dependency>

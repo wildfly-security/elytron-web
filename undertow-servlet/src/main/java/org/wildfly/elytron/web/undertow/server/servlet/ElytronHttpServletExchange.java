@@ -338,11 +338,6 @@ class ElytronHttpServletExchange extends ElytronHttpExchange {
         }
 
         @Override
-        public void setStatus(int sc, String sm) {
-            status = sc;
-        }
-
-        @Override
         public void setStatus(int sc) {
             status = sc;
         }
