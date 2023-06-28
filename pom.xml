@@ -58,6 +58,7 @@
         <version.junit.junit>4.11</version.junit.junit>
         <version.org.infinispan>9.4.24.Final</version.org.infinispan>
         <version.jakarta.json.jakarta-json-api>2.0.0</version.jakarta.json.jakarta-json-api>
+        <version.jakarta.servlet.jakarta-servlet-api>6.0.0</version.jakarta.servlet.jakarta-servlet-api>
         <version.org.glassfish.jakarta.json>2.0.0</version.org.glassfish.jakarta.json>
         <version.com.nimbusds.nimbus-jose-jwt>8.2.1</version.com.nimbusds.nimbus-jose-jwt>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
@@ -249,7 +250,12 @@
                 <version>${version.io.undertow}</version>
                 <scope>provided</scope>
             </dependency>
-
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${version.jakarta.servlet.jakarta-servlet-api}</version>
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
