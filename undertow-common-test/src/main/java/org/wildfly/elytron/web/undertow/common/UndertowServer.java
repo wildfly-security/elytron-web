@@ -67,4 +67,7 @@ public abstract class UndertowServer extends ExternalResource {
         after();
     }
 
+    public String getContextRoot() {
+        return contextRoot;
+    }
 }
