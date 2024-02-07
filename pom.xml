@@ -60,7 +60,7 @@
         <version.jakarta.json.jakarta-json-api>2.0.0</version.jakarta.json.jakarta-json-api>
         <version.jakarta.servlet.jakarta-servlet-api>6.0.0</version.jakarta.servlet.jakarta-servlet-api>
         <version.org.glassfish.jakarta.json>2.0.0</version.org.glassfish.jakarta.json>
-        <version.com.nimbusds.nimbus-jose-jwt>8.2.1</version.com.nimbusds.nimbus-jose-jwt>
+        <version.com.nimbusds.nimbus-jose-jwt>9.31</version.com.nimbusds.nimbus-jose-jwt>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.surefire.plugin>2.19.1</version.surefire.plugin>
 
