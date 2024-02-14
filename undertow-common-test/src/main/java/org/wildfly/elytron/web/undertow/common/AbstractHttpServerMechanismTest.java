@@ -95,7 +95,7 @@ public abstract class AbstractHttpServerMechanismTest {
         }
     }
 
-    protected void assertLoginPage(HttpResponse response) throws Exception {
+    protected static void assertLoginPage(HttpResponse response) throws Exception {
         assertTrue(EntityUtils.toString(response.getEntity()).contains("Login Page"));
     }
 
