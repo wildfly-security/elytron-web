@@ -52,15 +52,17 @@ public class UndertowServletServer extends UndertowServer {
     private final SecurityDomain securityDomain;
     private final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory;
     private final String authenticationMechanism;
+    private String deploymentName;
 
     private Undertow undertowServer;
 
     protected UndertowServletServer(Supplier<SSLContext> serverSslContext, int port, String contextRoot, final String authenticationMechanism,
-            final SecurityDomain securityDomain, final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory) {
+            final SecurityDomain securityDomain, final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory, final String deploymentName) {
         super(serverSslContext, port, contextRoot, SERVLET);
         this.authenticationMechanism = authenticationMechanism;
         this.securityDomain = securityDomain;
         this.httpServerAuthenticationMechanismFactory = httpServerAuthenticationMechanismFactory;
+        this.deploymentName = deploymentName;
     }
 
     @Override
@@ -68,7 +70,7 @@ public class UndertowServletServer extends UndertowServer {
         DeploymentInfo deploymentInfo = Servlets.deployment()
                 .setClassLoader(TestServlet.class.getClassLoader())
                 .setContextPath(contextRoot)
-                .setDeploymentName("helloworld.war")
+                .setDeploymentName(deploymentName)
                 .setLoginConfig(new LoginConfig(authenticationMechanism, "Elytron Realm", "/login", "/error"))
                 .addSecurityConstraint(new SecurityConstraint()
                         .addWebResourceCollection(new WebResourceCollection()
@@ -102,8 +104,8 @@ public class UndertowServletServer extends UndertowServer {
         DeploymentManager deployManager = Servlets.defaultContainer().addDeployment(deploymentInfo);
         deployManager.deploy();
 
-        PathHandler path = Handlers.path(Handlers.redirect(CONTEXT_ROOT))
-                .addPrefixPath(CONTEXT_ROOT, deployManager.start());
+        PathHandler path = Handlers.path(Handlers.redirect(contextRoot))
+                .addPrefixPath(contextRoot, deployManager.start());
 
         Undertow.Builder undertowBuilder = Undertow.builder()
                 .setHandler(path);
@@ -137,6 +139,7 @@ public class UndertowServletServer extends UndertowServer {
         private int port = 7776;
         private Supplier<SSLContext> serverSslContext;
         private HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory;
+        String deploymentName = "helloworld.war";
 
         public Builder setAuthenticationMechanism(final String authenticationMechanism) {
             this.authenticationMechanism = authenticationMechanism;
@@ -180,8 +183,13 @@ public class UndertowServletServer extends UndertowServer {
             return this;
         }
 
+        public Builder setDeploymentName(final String deploymentName) {
+            this.deploymentName = deploymentName;
+            return this;
+        }
+
         public UndertowServer build() throws Exception {
-            return new UndertowServletServer(serverSslContext, port, contextRoot, authenticationMechanism, securityDomain, httpServerAuthenticationMechanismFactory);
+            return new UndertowServletServer(serverSslContext, port, contextRoot, authenticationMechanism, securityDomain, httpServerAuthenticationMechanismFactory, deploymentName);
         }
 
 

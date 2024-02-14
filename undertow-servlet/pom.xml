@@ -262,7 +262,17 @@
             <artifactId>xnio-nio</artifactId>
             <scope>test</scope>
         </dependency>
-        
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-http-sso</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <repositories>
