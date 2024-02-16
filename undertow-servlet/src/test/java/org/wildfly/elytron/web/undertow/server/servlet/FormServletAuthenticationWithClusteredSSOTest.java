@@ -53,7 +53,6 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.wildfly.elytron.web.undertow.common.AbstractHttpServerMechanismTest;
@@ -87,7 +86,6 @@ import org.wildfly.security.permission.PermissionVerifier;
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-@Ignore
 public class FormServletAuthenticationWithClusteredSSOTest extends AbstractHttpServerMechanismTest {
 
     private Supplier<KeyPair> keyPairSupplier;
