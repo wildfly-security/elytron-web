@@ -19,6 +19,7 @@ package org.wildfly.elytron.web.undertow.common;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.wildfly.elytron.web.undertow.common.CertificateUtil.createSelfSignedIdentity;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,8 +95,8 @@ public abstract class ClientCertAuthenticationBase extends AbstractHttpServerMec
                 .setBaseDir(TLS_LOCATION)
                 .setRequestIdentities(Identity.LADYBIRD, Identity.SCARAB) // Create all identities.
                 .build();
-        caGenerationTool.createSelfSignedIdentity("tiger", new X500Principal("CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"),
-                "tiger.keystore");
+        createSelfSignedIdentity("tiger", new X500Principal("CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown"),
+                TLS_LOCATION, "tiger.keystore");
     }
 
     @AfterClass
