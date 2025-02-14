@@ -88,7 +88,24 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         httpAuthenticate.setEntity(new UrlEncodedFormEntity(parameters));
 
         assertSuccessfulResponse(httpClient.execute(httpAuthenticate), "ladybird");
-        assertSuccessfulResponse(httpClient.execute(httpAuthenticate), "ladybird");
+
+        HttpGet httpRequest = new HttpGet(server.createUri());
+        assertSuccessfulResponse(httpClient.execute(httpRequest), "ladybird");
+
+        // Now try re-authenticating.
+        httpAuthenticate = new HttpPost(server.createUri("/j_security_check"));
+
+        parameters.clear();
+        parameters.add(new BasicNameValuePair("j_username", "dung"));
+        parameters.add(new BasicNameValuePair("j_password", "Coleopterida"));
+
+        httpAuthenticate.setEntity(new UrlEncodedFormEntity(parameters));
+
+        // This first call triggers a new authentication
+        assertSuccessfulResponse(httpClient.execute(httpAuthenticate), "dung");
+        // This second call verifies the new identity was set
+        assertSuccessfulResponse(httpClient.execute(httpRequest), "dung");
+
     }
 
     @Test
@@ -142,6 +159,7 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         Map<String, SimpleRealmEntry> passwordMap = new HashMap<>();
 
         passwordMap.put("ladybird", new SimpleRealmEntry(Collections.singletonList(new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray()))))));
+        passwordMap.put("dung", new SimpleRealmEntry(Collections.singletonList(new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec("Coleopterida".toCharArray()))))));
 
         SimpleMapBackedSecurityRealm delegate = new SimpleMapBackedSecurityRealm();
 
