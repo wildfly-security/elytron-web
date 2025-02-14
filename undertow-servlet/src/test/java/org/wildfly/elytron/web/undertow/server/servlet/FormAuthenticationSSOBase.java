@@ -50,6 +50,7 @@ import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.elytron.web.undertow.common.AbstractHttpServerMechanismTest;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
 import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer;
+import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer.Builder;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
@@ -68,6 +69,7 @@ import org.wildfly.security.permission.PermissionVerifier;
 /**
  * Base class for the SSO testing.
  *
+ * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public abstract class FormAuthenticationSSOBase extends AbstractHttpServerMechanismTest {
@@ -122,15 +124,18 @@ public abstract class FormAuthenticationSSOBase extends AbstractHttpServerMechan
         return builder.build();
     }
 
-    protected UndertowServer createUndertowServer(int port) throws Exception {
+    protected Builder createUndertowServerBuilder(int port) throws Exception {
         return UndertowServletServer.builder()
-                .setAuthenticationMechanism(getMechanismName())
-                .setSecurityDomain(getSecurityDomain())
-                .setPort(port)
-                .setContextRoot("/" + port)
-                .setDeploymentName(String.valueOf(port))
-                .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()))
-                .build();
+            .setAuthenticationMechanism(getMechanismName())
+            .setSecurityDomain(getSecurityDomain())
+            .setPort(port)
+            .setContextRoot("/" + port)
+            .setDeploymentName(String.valueOf(port))
+            .setHttpServerAuthenticationMechanismFactory(getHttpServerAuthenticationMechanismFactory(Collections.emptyMap()));
+    }
+
+    protected UndertowServer createUndertowServer(int port) throws Exception {
+        return createUndertowServerBuilder(port).build();
     }
 
     protected abstract URI createUriAppA(final String alternativePath) throws URISyntaxException;
