@@ -119,6 +119,7 @@
                             <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
                             <java.net.preferIPv6Addresses>false</java.net.preferIPv6Addresses>
                             <jgroups.bind_addr>127.0.0.1</jgroups.bind_addr>
+                            <jgroups.use.jdk_logger>true</jgroups.use.jdk_logger> <!-- See ELYWEB-247 -->
                         </systemPropertyVariables>
                         <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
                         <trimStackTrace>false</trimStackTrace>
@@ -205,10 +206,10 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- 
+            <!--
                   Elytron Web Dependencies
              -->
-             
+
             <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
                 <artifactId>undertow-server</artifactId>
@@ -226,7 +227,7 @@
             </dependency>
 
 
-             <!-- 
+             <!--
                   External Dependencies
               -->
 
@@ -315,7 +316,7 @@
                 <version>${version.org.wildfly.security.elytron}</version>
                 <scope>provided</scope>
             </dependency>
-            
+
             <!--
                   Test Scope Only
              -->
