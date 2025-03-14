@@ -110,6 +110,9 @@ public abstract class AbstractHttpServerMechanismTest {
         HttpServerAuthenticationMechanismFactory delegate = new AggregateServerMechanismFactory(new BasicMechanismFactory(), new BearerMechanismFactory(),
                 new ClientCertMechanismFactory(), new DigestMechanismFactory(), new ExternalMechanismFactory(), new FormMechanismFactory(),
                 new SpnegoMechanismFactory());
+        if (getMechanismName() == null) {
+            return new PropertiesServerMechanismFactory(delegate, properties);
+        }
         return new PropertiesServerMechanismFactory(new FilterServerMechanismFactory(delegate, true, getMechanismName()), properties);
     }
 
