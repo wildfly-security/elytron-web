@@ -51,11 +51,15 @@ public abstract class UndertowServer extends ExternalResource {
     }
 
     public URI createUri(String alternatePath) throws URISyntaxException {
+        return createUri(this.contextRoot, alternatePath);
+    }
+
+    public URI createUri(String contextRoot, String alternatePath) throws URISyntaxException {
         final String path;
         if (alternatePath != null) {
-            path = this.contextRoot + alternatePath;
+            path = contextRoot + alternatePath;
         } else {
-            path = this.contextRoot + this.path;
+            path = contextRoot + this.path;
         }
 
         System.out.println("My PATH " + path);

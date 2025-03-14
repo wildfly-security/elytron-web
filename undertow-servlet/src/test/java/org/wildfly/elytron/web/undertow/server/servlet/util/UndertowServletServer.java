@@ -16,6 +16,11 @@
 
 package org.wildfly.elytron.web.undertow.server.servlet.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
@@ -52,39 +57,50 @@ public class UndertowServletServer extends UndertowServer {
     private final SecurityDomain securityDomain;
     private final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory;
     private final String authenticationMechanism;
-    private String deploymentName;
+    private final String deploymentName;
+    private final Map<String, String> additionalDeployments;
 
     private Undertow undertowServer;
 
     protected UndertowServletServer(Supplier<SSLContext> serverSslContext, int port, String contextRoot, final String authenticationMechanism,
-            final SecurityDomain securityDomain, final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory, final String deploymentName) {
+            final SecurityDomain securityDomain, final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory, final String deploymentName,
+            Map<String, String> additionalDeployments) {
         super(serverSslContext, port, contextRoot, SERVLET);
         this.authenticationMechanism = authenticationMechanism;
         this.securityDomain = securityDomain;
         this.httpServerAuthenticationMechanismFactory = httpServerAuthenticationMechanismFactory;
         this.deploymentName = deploymentName;
+        this.additionalDeployments = additionalDeployments;
+    }
+
+    private DeploymentInfo createDeployment(final String deploymentName, final String contextRoot) {
+        return Servlets.deployment()
+            .setClassLoader(TestServlet.class.getClassLoader())
+            .setContextPath(contextRoot)
+            .setDeploymentName(deploymentName)
+            .setLoginConfig(new LoginConfig(authenticationMechanism, "Elytron Realm", "/login", "/error"))
+            .addSecurityConstraint(new SecurityConstraint()
+                .addWebResourceCollection(new WebResourceCollection()
+                        .addUrlPattern(SERVLET + "/*"))
+                .addRoleAllowed("**")
+                .setEmptyRoleSemantic(SecurityInfo.EmptyRoleSemantic.DENY))
+            .addServlets(Servlets.servlet(TestServlet.class)
+                .addMapping("/")
+                .addMapping(SERVLET)
+                .addMapping("/unsecure"),
+                Servlets.servlet(LoginServlet.class)
+                    .addMapping("/login"),
+                Servlets.servlet(LogoutServlet.class)
+                    .addMapping("/logout"));
     }
 
     @Override
     protected void before() throws Throwable {
-        DeploymentInfo deploymentInfo = Servlets.deployment()
-                .setClassLoader(TestServlet.class.getClassLoader())
-                .setContextPath(contextRoot)
-                .setDeploymentName(deploymentName)
-                .setLoginConfig(new LoginConfig(authenticationMechanism, "Elytron Realm", "/login", "/error"))
-                .addSecurityConstraint(new SecurityConstraint()
-                        .addWebResourceCollection(new WebResourceCollection()
-                                .addUrlPattern(SERVLET + "/*"))
-                        .addRoleAllowed("**")
-                        .setEmptyRoleSemantic(SecurityInfo.EmptyRoleSemantic.DENY))
-                .addServlets(Servlets.servlet(TestServlet.class)
-                        .addMapping("/")
-                        .addMapping(SERVLET)
-                        .addMapping("/unsecure"),
-                        Servlets.servlet(LoginServlet.class)
-                            .addMapping("/login"),
-                        Servlets.servlet(LogoutServlet.class)
-                            .addMapping("/logout"));
+        List<DeploymentInfo> deployments = new ArrayList<>(1 + additionalDeployments.size());
+        deployments.add(createDeployment(deploymentName, contextRoot));
+        for (Entry<String, String> entry : additionalDeployments.entrySet()) {
+            deployments.add(createDeployment(entry.getKey(), entry.getValue()));
+        }
 
         HttpAuthenticationFactory httpAuthenticationFactory =  HttpAuthenticationFactory.builder()
                 .setFactory(httpServerAuthenticationMechanismFactory)
@@ -99,13 +115,16 @@ public class UndertowServletServer extends UndertowServer {
                 .setHttpAuthenticationFactory(httpAuthenticationFactory)
                 .setEnableJaspi(false)
                 .build();
-        authManager.configure(deploymentInfo);
 
-        DeploymentManager deployManager = Servlets.defaultContainer().addDeployment(deploymentInfo);
-        deployManager.deploy();
+        PathHandler path = Handlers.path(Handlers.redirect(contextRoot));
+        for (DeploymentInfo deploymentInfo : deployments) {
+            authManager.configure(deploymentInfo);
 
-        PathHandler path = Handlers.path(Handlers.redirect(contextRoot))
-                .addPrefixPath(contextRoot, deployManager.start());
+            DeploymentManager deployManager = Servlets.defaultContainer().addDeployment(deploymentInfo);
+            deployManager.deploy();
+
+            path.addPrefixPath(deploymentInfo.getContextPath(), deployManager.start());
+        }
 
         Undertow.Builder undertowBuilder = Undertow.builder()
                 .setHandler(path);
@@ -140,6 +159,7 @@ public class UndertowServletServer extends UndertowServer {
         private Supplier<SSLContext> serverSslContext;
         private HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory;
         String deploymentName = "helloworld.war";
+        private Map<String, String> additionalDeployments = new HashMap<>();
 
         public Builder setAuthenticationMechanism(final String authenticationMechanism) {
             this.authenticationMechanism = authenticationMechanism;
@@ -188,8 +208,14 @@ public class UndertowServletServer extends UndertowServer {
             return this;
         }
 
+        public Builder addAdditionalDeployment(final String deploymentName, final String contextRoot) {
+            this.additionalDeployments.put(deploymentName, contextRoot);
+            return this;
+        }
+
         public UndertowServer build() throws Exception {
-            return new UndertowServletServer(serverSslContext, port, contextRoot, authenticationMechanism, securityDomain, httpServerAuthenticationMechanismFactory, deploymentName);
+            return new UndertowServletServer(serverSslContext, port, contextRoot, authenticationMechanism,
+                securityDomain, httpServerAuthenticationMechanismFactory, deploymentName, additionalDeployments);
         }
 
 
