@@ -19,19 +19,13 @@ package org.wildfly.elytron.web.undertow.server.servlet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-import org.infinispan.Cache;
 import org.infinispan.commons.configuration.ClassAllowList;
-import org.infinispan.commons.marshall.JavaSerializationMarshaller;
-import org.infinispan.configuration.cache.CacheMode;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.junit.Rule;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
+import org.wildfly.elytron.web.undertow.server.servlet.util.UndertowServletServer.Builder;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.util.sso.DefaultSingleSignOnManager;
 import org.wildfly.security.http.util.sso.DefaultSingleSignOnSessionFactory;
@@ -46,15 +40,19 @@ import org.wildfly.security.http.util.sso.SingleSignOnSessionFactory;
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-public class FormServletAuthenticationWithClusteredSSOTest extends FormAuthenticationSSOBase {
+public class FormServletAuthenticationStandaloneSSOTest extends FormAuthenticationSSOBase {
 
     @Rule
     public final UndertowServer serverA = createUndertowServer(7776);
 
-    @Rule
-    public final UndertowServer serverB = createUndertowServer(7777);
 
-    public FormServletAuthenticationWithClusteredSSOTest() throws Exception {
+    public FormServletAuthenticationStandaloneSSOTest() throws Exception {
+    }
+
+    @Override
+    protected Builder createUndertowServerBuilder(int port) throws Exception {
+        return super.createUndertowServerBuilder(port)
+            .addAdditionalDeployment("second.war", getContextRootAppB());
     }
 
     @Override
@@ -64,7 +62,7 @@ public class FormServletAuthenticationWithClusteredSSOTest extends FormAuthentic
 
     @Override
     protected URI createUriAppB(String alternativePath) throws URISyntaxException {
-        return serverB.createUri(alternativePath);
+        return serverA.createUri(getContextRootAppB(), alternativePath);
     }
 
     @Override
@@ -74,30 +72,17 @@ public class FormServletAuthenticationWithClusteredSSOTest extends FormAuthentic
 
     @Override
     protected String getContextRootAppB() {
-        return serverB.getContextRoot();
+        return "/second";
     }
 
     @Override
     protected HttpServerAuthenticationMechanismFactory getHttpServerAuthenticationMechanismFactory(Map<String, ?> properties) {
         HttpServerAuthenticationMechanismFactory delegate = super.getHttpServerAuthenticationMechanismFactory(properties);
 
-        String cacheManagerName = UUID.randomUUID().toString();
         ClassAllowList allowList = new ClassAllowList();
         allowList.addRegexps(".*");
 
-        EmbeddedCacheManager cacheManager = new DefaultCacheManager(
-                GlobalConfigurationBuilder.defaultClusteredBuilder()
-                        .globalJmxStatistics().cacheManagerName(cacheManagerName).defaultCacheName("Default")
-                        .transport().nodeName(cacheManagerName).addProperty(JGroupsTransport.CONFIGURATION_FILE, "fast.xml")
-                        .serialization().marshaller(new JavaSerializationMarshaller(allowList))
-                        .build(),
-                new ConfigurationBuilder()
-                        .clustering()
-                        .cacheMode(CacheMode.REPL_SYNC)
-                        .build()
-        );
-
-        Cache<String, SingleSignOnEntry> cache = cacheManager.getCache();
+        final ConcurrentMap<String, SingleSignOnEntry> cache = new ConcurrentHashMap<>();
         SingleSignOnManager manager = new DefaultSingleSignOnManager(cache, new DefaultSingleSignOnSessionIdentifierFactory(), (id, entry) -> cache.put(id, entry));
         SingleSignOnServerMechanismFactory.SingleSignOnConfiguration signOnConfiguration =
                 new SingleSignOnServerMechanismFactory.SingleSignOnConfiguration("JSESSIONSSOID", null,
@@ -110,7 +95,5 @@ public class FormServletAuthenticationWithClusteredSSOTest extends FormAuthentic
 
         return new SingleSignOnServerMechanismFactory(delegate, singleSignOnSessionFactory, signOnConfiguration);
     }
-
-
 
 }
