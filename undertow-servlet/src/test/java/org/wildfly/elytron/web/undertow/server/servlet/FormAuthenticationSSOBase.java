@@ -17,6 +17,8 @@
 package org.wildfly.elytron.web.undertow.server.servlet;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
@@ -82,13 +84,13 @@ public abstract class FormAuthenticationSSOBase extends AbstractHttpServerMechan
         return "FORM";
     }
 
-        @Override
+    @Override
     protected SecurityDomain doCreateSecurityDomain() throws Exception {
         PasswordFactory passwordFactory = PasswordFactory.getInstance(ALGORITHM_CLEAR);
         Map<String, SimpleRealmEntry> passwordMap = new HashMap<>();
 
-        passwordMap.put("ladybird",
-                new SimpleRealmEntry(Collections.singletonList(new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray()))))));
+        passwordMap.put("ladybird", new SimpleRealmEntry(Collections.singletonList(new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec("Coleoptera".toCharArray()))))));
+        passwordMap.put("dung", new SimpleRealmEntry(Collections.singletonList(new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec("Coleopterida".toCharArray()))))));
 
         SimpleMapBackedSecurityRealm delegate = new SimpleMapBackedSecurityRealm();
 
@@ -156,41 +158,67 @@ public abstract class FormAuthenticationSSOBase extends AbstractHttpServerMechan
         assertFalse(cookieStore.getCookies().stream().filter(cookie -> cookie.getName().equals("JSESSIONSSOID")).findAny().isPresent());
 
         // log into APP_A
-        HttpResponse execute = loginToApp(httpClient, this::createUriAppA, "ladybird", "Coleoptera");
+        HttpResponse execute = loginToApp(httpClient, this::createUriAppA, "ladybird", "Coleoptera", false);
         assertTrue(cookieStore.getCookies().stream().filter(cookie -> cookie.getName().equals("JSESSIONSSOID")).findAny().isPresent());
         assertSuccessfulResponse(execute, "ladybird");
         String appOneSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppA);
+        assertNotNull(appOneSessionId);
 
         // can now access APP_B without logging in again
         assertSuccessfulResponse(httpClient.execute(new HttpGet(createUriAppB(null))), "ladybird");
         String appTwoSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppB);
+        assertNotNull(appTwoSessionId);
 
         // log out of APP_A
         httpClient.execute(new HttpGet(createUriAppA("/logout")));
 
         // log into APP_A again
-        execute = loginToApp(httpClient, this::createUriAppA, "ladybird", "Coleoptera");
+        execute = loginToApp(httpClient, this::createUriAppA, "ladybird", "Coleoptera", false);
         assertTrue(cookieStore.getCookies().stream().filter(cookie -> cookie.getName().equals("JSESSIONSSOID")).findAny().isPresent());
         assertSuccessfulResponse(execute, "ladybird");
         String appOneNewSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppA);
 
         // the session ID for APP_A should now be different from the initial session ID
-        assertTrue(appOneSessionId != null && appOneNewSessionId != null && ! appOneSessionId.equals(appOneNewSessionId));
+        assertNotNull(appOneNewSessionId);
+        assertTrue(! appOneSessionId.equals(appOneNewSessionId));
 
         // access APP_B without logging in again
         assertSuccessfulResponse(httpClient.execute(new HttpGet(createUriAppB(null))), "ladybird");
         String appTwoNewSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppB);
 
         // the session ID for APP_B should now be different from the initial session ID
-        assertTrue(appTwoSessionId != null && appTwoNewSessionId != null && ! appTwoSessionId.equals(appTwoNewSessionId));
+        assertNotNull(appTwoNewSessionId);
+        assertTrue(! appTwoSessionId.equals(appTwoNewSessionId));
+
+        // Now try re-authentication
+
+        // log into APP_B as a new user
+        execute = loginToApp(httpClient, this::createUriAppB, "dung", "Coleopterida", true);
+        assertTrue(cookieStore.getCookies().stream().filter(cookie -> cookie.getName().equals("JSESSIONSSOID")).findAny().isPresent());
+        assertSuccessfulResponse(execute, "dung");
+        String appTwoNewNewSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppB);
+
+        // Verify that the session ID changed again.
+        assertNotNull(appTwoNewNewSessionId);
+        assertNotEquals("App session ID should have changed", appTwoNewSessionId, appTwoNewNewSessionId);
+
+        // Access App A without logging in again
+        assertSuccessfulResponse(httpClient.execute(new HttpGet(createUriAppA(null))), "dung");
+        String appOneNewNewSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppA);
+
+        // Verify the session ID change
+        assertNotNull("App missing session ID", appOneNewNewSessionId);
+        assertNotEquals("App session ID should have changed", appOneNewSessionId, appOneNewNewSessionId);
     }
 
-    private static HttpResponse loginToApp(HttpClient httpClient, ExceptionFunction<String, URI, Exception> uri, String username, String password) throws Exception {
-        assertLoginPage(httpClient.execute(new HttpGet(uri.apply(null))));
+    private static HttpResponse loginToApp(HttpClient httpClient, ExceptionFunction<String, URI, Exception> uri, String username, String password, boolean reAuth) throws Exception {
+        if (! reAuth) {
+            assertLoginPage(httpClient.execute(new HttpGet(uri.apply(null))));
+        }
         HttpPost httpAuthenticate = new HttpPost(uri.apply("/j_security_check"));
         List<NameValuePair> parameters = new ArrayList<>(2);
-        parameters.add(new BasicNameValuePair("j_username", "ladybird"));
-        parameters.add(new BasicNameValuePair("j_password", "Coleoptera"));
+        parameters.add(new BasicNameValuePair("j_username", username));
+        parameters.add(new BasicNameValuePair("j_password", password));
         httpAuthenticate.setEntity(new UrlEncodedFormEntity(parameters));
         return httpClient.execute(httpAuthenticate);
     }
