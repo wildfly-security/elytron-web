@@ -200,11 +200,11 @@ public abstract class FormAuthenticationSSOBase extends AbstractHttpServerMechan
 
         // Verify that the session ID changed again.
         assertNotNull(appTwoNewNewSessionId);
-        assertTrue(! appTwoNewNewSessionId.equals(appTwoNewSessionId));
+        assertNotEquals("App session ID should have changed", appTwoNewSessionId, appTwoNewNewSessionId);
 
         // Access App A without logging in again
         assertSuccessfulResponse(httpClient.execute(new HttpGet(createUriAppA(null))), "dung");
-        String appOneNewNewSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppB);
+        String appOneNewNewSessionId = getSessionIdForApp(cookieStore, this::getContextRootAppA);
 
         // Verify the session ID change
         assertNotNull("App missing session ID", appOneNewNewSessionId);
