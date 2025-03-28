@@ -75,6 +75,7 @@
     </properties>
 
     <modules>
+        <module>bare-http-util</module>
         <module>undertow</module>
         <module>undertow-common-test</module>
         <module>undertow-servlet</module>
@@ -210,6 +211,11 @@
                   Elytron Web Dependencies
              -->
 
+            <dependency>
+                <groupId>org.wildfly.security.elytron-web</groupId>
+                <artifactId>bare-http-util</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
                 <artifactId>undertow-server</artifactId>
