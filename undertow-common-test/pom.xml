@@ -121,6 +121,10 @@
             <artifactId>wildfly-elytron-x500-deprecated</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wildfly.security.elytron-web</groupId>
+            <artifactId>bare-http-util</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
         </dependency>

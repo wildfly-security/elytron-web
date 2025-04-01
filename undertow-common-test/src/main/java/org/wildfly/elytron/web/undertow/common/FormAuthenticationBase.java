@@ -18,8 +18,10 @@
 package org.wildfly.elytron.web.undertow.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
+import java.net.URI;
 import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
@@ -39,6 +41,9 @@ import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Rule;
 import org.junit.Test;
+import org.wildfly.elytron.web.barehttp.BareHttpClient;
+import org.wildfly.elytron.web.barehttp.BareHttpRequest;
+import org.wildfly.elytron.web.barehttp.BareHttpResponse;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
@@ -128,7 +133,69 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         httpClient.execute(new HttpGet(server.createUri("/logout")));
 
         assertLoginPage(httpClient.execute(new HttpGet(server.createUri())));
+    }
 
+    private static final String J_SECURITY_DATA = "j_username=%s&j_password=%s";
+
+    /**
+     * Test case that tests a FORM authentication flow but with non-encoded
+     * characters in the initial request.
+     *
+     * Generally it is not recommended to use this but Undertow allows this to
+     * be enabled so Elytron needs to support it.
+     */
+    @Test
+    public void testNonEncodedURL() throws Exception {
+        URI defaultUri = server.createUri();
+
+        BareHttpClient httpClient = BareHttpClient.builder().build();
+
+        final String hostName = defaultUri.getHost();
+        final int port = defaultUri.getPort();
+
+        BareHttpClient.Target targetServer = httpClient.target(hostName, port);
+
+        BareHttpRequest initialRequest = targetServer.buildRequest(defaultUri.getPath()).build();
+        BareHttpResponse httpResponse = initialRequest.execute();
+
+        assertTrue("Response should set JSESSIONID", targetServer.hasCookie("JSESSIONID"));
+        if (httpResponse.getStatusCode() == 302) {
+            // Now get the location we were redirected to before processing to check the login page.
+            String location = httpResponse.getHeaders().get("Location").get(0);
+            URI locationUri = new URI(location);
+
+            assertEquals("Expected same hostName on redirect", hostName, locationUri.getHost());
+            assertEquals("Expected same port on redirect", port, locationUri.getPort());
+
+            httpResponse = targetServer.buildRequest(locationUri.getPath())
+                    .build().execute();
+        }
+        // This first request should have resulted in the login page being returned.
+        // The end result should be a HTTP 200 status code.
+        assertEquals("Expected Success", 200, httpResponse.getStatusCode());
+        assertTrue("We expect the login page.", httpResponse.getMessageBody().contains("Login Page"));
+
+        URI jSecurityCheckUri = server.createUri("/j_security_check");
+        String messageBody = String.format(J_SECURITY_DATA, "ladybird", "Coleoptera");
+
+        httpResponse = targetServer.buildRequest(jSecurityCheckUri.getPath())
+                .setMessageBody(messageBody)
+                .build()
+                .execute();
+
+        assertEquals("Expected Redirect", 302, httpResponse.getStatusCode());
+        String location = httpResponse.getHeaders().get("Location").get(0);
+        URI locationUri = new URI(location);
+
+        assertEquals("Expected same hostName on redirect", hostName, locationUri.getHost());
+        assertEquals("Expected same port on redirect", port, locationUri.getPort());
+
+        httpResponse = targetServer.buildRequest(locationUri.getPath())
+                .build().execute();
+
+        assertEquals("Expected Success", 200, httpResponse.getStatusCode());
+        assertEquals("Expected UndertowUser", "ladybird", httpResponse.getHeaders().get("UndertowUser").get(0));
+        assertEquals("Expected ElytronUser", "ladybird", httpResponse.getHeaders().get("ElytronUser").get(0));
     }
 
     @Override
