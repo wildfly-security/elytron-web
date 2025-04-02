@@ -25,8 +25,6 @@ import static org.wildfly.elytron.web.barehttp.BareHttpConstants.SET_COOKIE_HEAD
 import static org.wildfly.elytron.web.barehttp.BareHttpConstants.TRANSFER_ENCODING_COOKIE_NAME;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +50,7 @@ public class BareHttpResponse {
         this.headers = builder.headers;
         this.contentLength = builder.contentLength;
         this.chunkedEncoding = builder.chunkedEncoding;
-        this.messageBody = toMessageBody(builder.messageBody, contentLength, chunkedEncoding);
+        this.messageBody = builder.messageBody;
     }
 
     public int getStatusCode() {
@@ -75,16 +73,6 @@ public class BareHttpResponse {
         return chunkedEncoding;
     }
 
-    private static String toMessageBody(final ByteBuffer byteBuffer, int contentLength, boolean chunkedEncoding) {
-        if (!chunkedEncoding) {
-            byte[] bodyBytes = new byte[contentLength];
-            byteBuffer.get(bodyBytes);
-
-            return new String(bodyBytes, StandardCharsets.UTF_8);
-        } else {
-            return "";
-        }
-    }
 
     static Builder builder(final Target target, final String statusLine) {
         if (!statusLine.startsWith("HTTP/1.1")) {
@@ -101,7 +89,7 @@ public class BareHttpResponse {
         private final Target target;
         final int statusCode;
         final Map<String, List<String>> headers = new HashMap<>();
-        ByteBuffer messageBody;
+        String messageBody;
         boolean closeConnection = true;
         int contentLength = -1;
         boolean chunkedEncoding = false;
@@ -109,6 +97,14 @@ public class BareHttpResponse {
         Builder(final Target target, final int statusCode) {
             this.target = target;
             this.statusCode = statusCode;
+        }
+
+        boolean isChunkedEncoding() {
+            return chunkedEncoding;
+        }
+
+        int getContentLength() {
+            return contentLength;
         }
 
         Builder processHeader(final String header) {
@@ -154,7 +150,7 @@ public class BareHttpResponse {
             return this;
         }
 
-        Builder setBody(final ByteBuffer messageBody) {
+        Builder setMessageBody(final String messageBody) {
             this.messageBody = messageBody;
 
             return this;

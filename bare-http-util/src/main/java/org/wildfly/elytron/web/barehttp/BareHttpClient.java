@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -131,7 +132,8 @@ public class BareHttpClient {
                     } else if (currentLine.length() > 0) {
                         responseBuilder.processHeader(currentLine.toString());
                     } else {
-                        responseBuilder.setBody(responseMessage);
+                        responseBuilder.setMessageBody(toMessageBody(responseMessage, responseBuilder.getContentLength(),
+                                responseBuilder.isChunkedEncoding()));
                         complete = true;
                     }
 
@@ -142,6 +144,60 @@ public class BareHttpClient {
             }
 
             return responseBuilder != null ? responseBuilder.build() : null;
+        }
+
+        private String toMessageBody(final ByteBuffer byteBuffer, int contentLength, boolean chunkedEncoding) throws IOException {
+            if (!chunkedEncoding) {
+                byte[] bodyBytes = new byte[contentLength];
+                byteBuffer.get(bodyBytes);
+
+                return new String(bodyBytes, StandardCharsets.UTF_8);
+            } else {
+                StringBuilder responseBuilder = new StringBuilder();
+
+                int chunkSize = -1;
+                do {
+                    if (chunkSize > 0) {
+                        byte[] chunkData = new byte[chunkSize];
+                        byteBuffer.get(chunkData);
+                        byteBuffer.get(); // Followed by CR
+                        byteBuffer.get(); // Followed by LF
+                        responseBuilder.append(new String(chunkData, StandardCharsets.UTF_8));
+                    }
+
+                    if (!byteBuffer.hasRemaining()) {
+                        byteBuffer.clear();
+                        socketChannel.read(byteBuffer);
+                        byteBuffer.flip();
+                    }
+
+                    chunkSize = 0;
+                    StringBuilder chunkSizeString = new StringBuilder();
+                    boolean endReached = !byteBuffer.hasRemaining();
+                    while(!endReached) {
+                        char currentChar = (char) byteBuffer.get();
+                        if ( (currentChar >= '0' && currentChar <= '9')
+                                || (currentChar >= 'a' && currentChar <= 'f')
+                                || (currentChar >= 'A' && currentChar <= 'F')) {
+                            chunkSizeString.append(currentChar);
+                        } else if (currentChar == '\r') {
+                            byteBuffer.mark();
+                            if (byteBuffer.hasRemaining() && byteBuffer.get() == '\n') {
+                                endReached = true;
+                            } else {
+                                byteBuffer.reset();
+                            }
+                        }
+                    }
+
+                    System.out.println("Chunk Size String - '" + chunkSizeString.toString() + "'");
+                    chunkSize = Integer.parseInt(chunkSizeString.toString(), 16);
+
+
+                } while (chunkSize > 0);
+
+                return responseBuilder.toString();
+            }
         }
 
         public boolean isConnected() {
