@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -138,14 +139,12 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
     private static final String J_SECURITY_DATA = "j_username=%s&j_password=%s";
 
     /**
-     * Test case that tests a FORM authentication flow but with non-encoded
-     * characters in the initial request.
-     *
-     * Generally it is not recommended to use this but Undertow allows this to
-     * be enabled so Elytron needs to support it.
+     * Common method for tests using the {@code BareHttpClient} implementation.
+     * @param initialPath
+     * @param redirectVerifier
+     * @throws Exception
      */
-    @Test
-    public void testNonEncodedURL() throws Exception {
+    public void bareHttpClientRunner(final String initialPath, Predicate<URI> redirectVerifier) throws Exception {
         URI defaultUri = server.createUri();
 
         BareHttpClient httpClient = BareHttpClient.builder().build();
@@ -155,7 +154,7 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
 
         BareHttpClient.Target targetServer = httpClient.target(hostName, port);
 
-        BareHttpRequest initialRequest = targetServer.buildRequest(defaultUri.getPath()).build();
+        BareHttpRequest initialRequest = targetServer.buildRequest(initialPath).build();
         BareHttpResponse httpResponse = initialRequest.execute();
 
         assertTrue("Response should set JSESSIONID", targetServer.hasCookie("JSESSIONID"));
@@ -186,6 +185,7 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         assertEquals("Expected Redirect", 302, httpResponse.getStatusCode());
         String location = httpResponse.getHeaders().get("Location").get(0);
         URI locationUri = new URI(location);
+        assertTrue("Redirect URI", redirectVerifier.test(locationUri));
 
         assertEquals("Expected same hostName on redirect", hostName, locationUri.getHost());
         assertEquals("Expected same port on redirect", port, locationUri.getPort());
@@ -196,6 +196,14 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         assertEquals("Expected Success", 200, httpResponse.getStatusCode());
         assertEquals("Expected UndertowUser", "ladybird", httpResponse.getHeaders().get("UndertowUser").get(0));
         assertEquals("Expected ElytronUser", "ladybird", httpResponse.getHeaders().get("ElytronUser").get(0));
+    }
+
+    @Test
+    public void testNonEncodedURLBare() throws Exception {
+        URI defaultUri = server.createUri();
+        bareHttpClientRunner(defaultUri.getPath(),
+                (u) ->  (defaultUri.getPath().equals("") && u.getPath().equals("/")) ||
+                        defaultUri.getPath().equals(u.getPath()));
     }
 
     @Override
