@@ -144,7 +144,7 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
      * @param redirectVerifier
      * @throws Exception
      */
-    public void bareHttpClientRunner(final String initialPath, Predicate<URI> redirectVerifier) throws Exception {
+    public void bareHttpClientRunner(final String initialPath, Predicate<String> redirectVerifier) throws Exception {
         URI defaultUri = server.createUri();
 
         BareHttpClient httpClient = BareHttpClient.builder().build();
@@ -184,13 +184,16 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
 
         assertEquals("Expected Redirect", 302, httpResponse.getStatusCode());
         String location = httpResponse.getHeaders().get("Location").get(0);
-        URI locationUri = new URI(location);
-        assertTrue("Redirect URI", redirectVerifier.test(locationUri));
 
+        String redirectPath =  location.substring(location.indexOf('/', 7));
+
+        assertTrue("Redirect URI", redirectVerifier.test(redirectPath));
+
+        URI locationUri = new URI(location);
         assertEquals("Expected same hostName on redirect", hostName, locationUri.getHost());
         assertEquals("Expected same port on redirect", port, locationUri.getPort());
 
-        httpResponse = targetServer.buildRequest(locationUri.getPath())
+        httpResponse = targetServer.buildRequest(redirectPath)
                 .build().execute();
 
         assertEquals("Expected Success", 200, httpResponse.getStatusCode());
@@ -199,11 +202,22 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
     }
 
     @Test
-    public void testNonEncodedURLBare() throws Exception {
+    public void testDefaultURLBare() throws Exception {
         URI defaultUri = server.createUri();
-        bareHttpClientRunner(defaultUri.getPath(),
-                (u) ->  (defaultUri.getPath().equals("") && u.getPath().equals("/")) ||
-                        defaultUri.getPath().equals(u.getPath()));
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        bareHttpClientRunner(defaultUri.getPath(), (p) ->  defaultPath.equals(p));
+    }
+
+    @Test
+    public void testEncodedQueryStringBare() throws Exception {
+        String encodedQuery = "project=%7BElytron%20Web%7D";
+        URI defaultUri = server.createUri();
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        String path = defaultPath + "?" + encodedQuery;
+
+        bareHttpClientRunner(path, (p) -> path.equals(p));
     }
 
     @Override
