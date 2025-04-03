@@ -247,7 +247,7 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
 
         String path = defaultPath + "?" + nonEncodedQuery;
 
-        String encodedQuery = "project=%7BElytron%20Web%7D";
+        String encodedQuery = "project=%7BElytronWeb%7D";
         String expectedPath = defaultPath + "?" + encodedQuery;
 
         bareHttpClientRunner(path, (p) -> expectedPath.equals(p));
