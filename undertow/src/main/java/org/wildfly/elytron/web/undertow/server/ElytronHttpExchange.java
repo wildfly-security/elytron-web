@@ -18,10 +18,12 @@
 package org.wildfly.elytron.web.undertow.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static java.net.URLDecoder.decode;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -205,10 +207,11 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                 port = httpServerExchange.getHostPort();
                 path = httpServerExchange.getRequestURI();
             }
+
             return new URI(scheme, null, host,
-                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port, path,
-                    query == null || "".equals(query) ? null : query, null);
-        } catch (URISyntaxException e) {
+                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port, decode(path, "UTF-8"),
+                    query == null || "".equals(query) ? null : decode(query, "UTF-8"), null);
+        } catch (UnsupportedEncodingException | URISyntaxException e) {
             log.trace("Unable to construct URI", e);
             return null;
         }
