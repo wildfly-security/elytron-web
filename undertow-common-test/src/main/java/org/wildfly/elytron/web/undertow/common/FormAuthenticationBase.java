@@ -18,6 +18,7 @@
 package org.wildfly.elytron.web.undertow.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
@@ -173,6 +174,7 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
 
         BareHttpRequest initialRequest = targetServer.buildRequest(initialPath).build();
         BareHttpResponse httpResponse = initialRequest.execute();
+        assertNotEquals("Request Rejected", 400, httpResponse.getStatusCode());
 
         assertTrue("Response should set JSESSIONID", targetServer.hasCookie("JSESSIONID"));
         if (httpResponse.getStatusCode() == 302) {
@@ -235,6 +237,20 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         String path = defaultPath + "?" + encodedQuery;
 
         bareHttpClientRunner(path, (p) -> path.equals(p));
+    }
+
+    @Test
+    public void testNonEncodedQueryStringBare() throws Exception {
+        String nonEncodedQuery = "project={ElytronWeb}";
+        URI defaultUri = server.createUri();
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        String path = defaultPath + "?" + nonEncodedQuery;
+
+        String encodedQuery = "project=%7BElytron%20Web%7D";
+        String expectedPath = defaultPath + "?" + encodedQuery;
+
+        bareHttpClientRunner(path, (p) -> expectedPath.equals(p));
     }
 
     @Override

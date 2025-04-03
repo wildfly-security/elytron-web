@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
 
+import io.undertow.UndertowOptions;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
@@ -80,6 +81,7 @@ public class UndertowCoreServer extends UndertowServer {
         } else {
             builder.addHttpListener(port, "localhost", rootHttpHandler);
         }
+        builder.setServerOption(UndertowOptions.ALLOW_UNESCAPED_CHARACTERS_IN_URL, true);
 
         server = builder.build();
         server.start();
