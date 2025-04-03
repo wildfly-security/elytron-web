@@ -205,36 +205,9 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                 port = httpServerExchange.getHostPort();
                 path = httpServerExchange.getRequestURI();
             }
-            StringBuilder uriBuilder = new StringBuilder();
-            if (scheme != null) {
-                uriBuilder.append(scheme);
-                uriBuilder.append(':');
-            }
-            if (host != null) {
-                uriBuilder.append("//");
-                boolean needBrackets = ((host.indexOf(':') >= 0)
-                        && ! host.startsWith("[")
-                        && ! host.endsWith("]"));
-                if (needBrackets) {
-                    uriBuilder.append('[');
-                }
-                uriBuilder.append(host);
-                if (needBrackets) {
-                    uriBuilder.append(']');
-                }
-            }
-            if (! (("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443))) {
-                uriBuilder.append(':');
-                uriBuilder.append(port);
-            }
-            if (path != null) {
-                uriBuilder.append(path);
-            }
-            if (query != null && ! query.isEmpty()) {
-                uriBuilder.append("?");
-                uriBuilder.append(query);
-            }
-            return new URI(uriBuilder.toString());
+            return new URI(scheme, null, host,
+                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port, path,
+                    query == null || "".equals(query) ? null : query, null);
         } catch (URISyntaxException e) {
             log.trace("Unable to construct URI", e);
             return null;
