@@ -253,6 +253,23 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         bareHttpClientRunner(path, (p) -> expectedPath.equals(p));
     }
 
+    @Test
+    public void testEncodedPathBare() throws Exception {
+        URI defaultUri = server.createUri();
+        String encodedPath = defaultUri.getPath() + "/file%7B1%7D.txt";
+
+        bareHttpClientRunner(encodedPath, (p) -> encodedPath.equals(p));
+    }
+
+    @Test
+    public void testNonEncodedPathBare() throws Exception {
+        URI defaultUri = server.createUri();
+        String nonEncodedPath = defaultUri.getPath() + "/file{1}.txt";
+        String encodedPath = defaultUri.getPath() + "/file%7B1%7D.txt";
+        // During the round trip to the server it get's encoded.
+        bareHttpClientRunner(nonEncodedPath, (p) -> encodedPath.equals(p));
+    }
+
     @Override
     protected String getMechanismName() {
         return "FORM";
