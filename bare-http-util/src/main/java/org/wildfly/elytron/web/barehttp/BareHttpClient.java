@@ -190,7 +190,6 @@ public class BareHttpClient {
                         }
                     }
 
-                    System.out.println("Chunk Size String - '" + chunkSizeString.toString() + "'");
                     chunkSize = Integer.parseInt(chunkSizeString.toString(), 16);
 
 
