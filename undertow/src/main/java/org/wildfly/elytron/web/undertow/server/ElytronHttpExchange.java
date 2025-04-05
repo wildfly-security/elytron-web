@@ -18,10 +18,12 @@
 package org.wildfly.elytron.web.undertow.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static java.net.URLDecoder.decode;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,6 +43,7 @@ import java.util.stream.StreamSupport;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
+import org.jboss.logging.Logger;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpExchangeSpi;
@@ -74,6 +77,8 @@ import io.undertow.util.HttpString;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class ElytronHttpExchange implements HttpExchangeSpi {
+
+    private static final Logger log = Logger.getLogger("org.wildfly.security.http");
 
     private static final AttachmentKey<HttpScope> HTTP_SCOPE_ATTACHMENT_KEY = AttachmentKey.create(HttpScope.class);
     private static final FormParserFactory FORM_PARSER_FACTORY = FormParserFactory.builder().build();
@@ -137,12 +142,16 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
         try {
             Certificate[] peerCertificates = info.getPeerCertificates();
             if (peerCertificates != null || renegotiate==false) return peerCertificates;
-        } catch (SSLPeerUnverifiedException |RenegotiationRequiredException e) {}
+        } catch (SSLPeerUnverifiedException | RenegotiationRequiredException e) {
+            log.trace("Unable to getPeerCertificates", e);
+        }
 
         try {
             info.renegotiate(httpServerExchange, SslClientAuthMode.REQUESTED);
             return httpServerExchange.getConnection().getSslSessionInfo().getPeerCertificates();
-        } catch (IOException | RenegotiationRequiredException e) {}
+        } catch (IOException | RenegotiationRequiredException e) {
+            log.trace("Unable to getPeerCertificates by renegotiating", e);
+        }
 
         return null;
     }
@@ -198,37 +207,13 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                 port = httpServerExchange.getHostPort();
                 path = httpServerExchange.getRequestURI();
             }
-            StringBuilder uriBuilder = new StringBuilder();
-            if (scheme != null) {
-                uriBuilder.append(scheme);
-                uriBuilder.append(':');
-            }
-            if (host != null) {
-                uriBuilder.append("//");
-                boolean needBrackets = ((host.indexOf(':') >= 0)
-                        && ! host.startsWith("[")
-                        && ! host.endsWith("]"));
-                if (needBrackets) {
-                    uriBuilder.append('[');
-                }
-                uriBuilder.append(host);
-                if (needBrackets) {
-                    uriBuilder.append(']');
-                }
-            }
-            if (! (("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443))) {
-                uriBuilder.append(':');
-                uriBuilder.append(port);
-            }
-            if (path != null) {
-                uriBuilder.append(path);
-            }
-            if (query != null && ! query.isEmpty()) {
-                uriBuilder.append("?");
-                uriBuilder.append(query);
-            }
-            return new URI(uriBuilder.toString());
-        } catch (URISyntaxException e) {
+
+            return new URI(scheme, null, host,
+                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port,
+                    path != null ? decode(path, "UTF-8") : null,
+                    query == null || "".equals(query) ? null : decode(query, "UTF-8"), null);
+        } catch (UnsupportedEncodingException | URISyntaxException e) {
+            log.trace("Unable to construct URI", e);
             return null;
         }
     }
@@ -271,7 +256,9 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                                                     Collections.unmodifiableList(data.get(s).stream()
                                                             .filter((FormValue v) -> v.isFile() == false)
                                                             .map((FormValue fv) -> fv.getValue()).collect(Collectors.toList()))));
-                        } catch (IOException e) {}
+                        } catch (IOException e) {
+                            log.trace("Unable to parse FORM data", e);
+                        }
                     } else {
                         queryParameters.forEach((name, values) -> parameters.put(name, Collections.unmodifiableList(new ArrayList<String>(values))));
                     }
