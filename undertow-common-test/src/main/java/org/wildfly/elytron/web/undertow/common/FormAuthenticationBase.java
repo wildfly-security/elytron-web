@@ -18,8 +18,11 @@
 package org.wildfly.elytron.web.undertow.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 
+import java.net.URI;
 import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -39,6 +43,9 @@ import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Rule;
 import org.junit.Test;
+import org.wildfly.elytron.web.barehttp.BareHttpClient;
+import org.wildfly.elytron.web.barehttp.BareHttpRequest;
+import org.wildfly.elytron.web.barehttp.BareHttpResponse;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
@@ -145,7 +152,122 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
         httpClient.execute(new HttpGet(server.createUri("/logout")));
 
         assertLoginPage(httpClient.execute(new HttpGet(server.createUri())));
+    }
 
+    private static final String J_SECURITY_DATA = "j_username=%s&j_password=%s";
+
+    /**
+     * Common method for tests using the {@code BareHttpClient} implementation.
+     * @param initialPath
+     * @param redirectVerifier
+     * @throws Exception
+     */
+    public void bareHttpClientRunner(final String initialPath, Predicate<String> redirectVerifier) throws Exception {
+        URI defaultUri = server.createUri();
+
+        BareHttpClient httpClient = BareHttpClient.builder().build();
+
+        final String hostName = defaultUri.getHost();
+        final int port = defaultUri.getPort();
+
+        BareHttpClient.Target targetServer = httpClient.target(hostName, port);
+
+        BareHttpRequest initialRequest = targetServer.buildRequest(initialPath).build();
+        BareHttpResponse httpResponse = initialRequest.execute();
+        assertNotEquals("Request Rejected", 400, httpResponse.getStatusCode());
+
+        assertTrue("Response should set JSESSIONID", targetServer.hasCookie("JSESSIONID"));
+        if (httpResponse.getStatusCode() == 302) {
+            // Now get the location we were redirected to before processing to check the login page.
+            String location = httpResponse.getHeaders().get("Location").get(0);
+            URI locationUri = new URI(location);
+
+            assertEquals("Expected same hostName on redirect", hostName, locationUri.getHost());
+            assertEquals("Expected same port on redirect", port, locationUri.getPort());
+
+            httpResponse = targetServer.buildRequest(locationUri.getPath())
+                    .build().execute();
+        }
+        // This first request should have resulted in the login page being returned.
+        // The end result should be a HTTP 200 status code.
+        assertEquals("Expected Success", 200, httpResponse.getStatusCode());
+        assertTrue("We expect the login page.", httpResponse.getMessageBody().contains("Login Page"));
+
+        URI jSecurityCheckUri = server.createUri("/j_security_check");
+        String messageBody = String.format(J_SECURITY_DATA, "ladybird", "Coleoptera");
+
+        httpResponse = targetServer.buildRequest(jSecurityCheckUri.getPath())
+                .setMessageBody(messageBody)
+                .build()
+                .execute();
+
+        assertEquals("Expected Redirect", 302, httpResponse.getStatusCode());
+        String location = httpResponse.getHeaders().get("Location").get(0);
+
+        String redirectPath =  location.substring(location.indexOf('/', 7));
+
+        assertTrue("Redirect URI", redirectVerifier.test(redirectPath));
+
+        URI locationUri = new URI(location);
+        assertEquals("Expected same hostName on redirect", hostName, locationUri.getHost());
+        assertEquals("Expected same port on redirect", port, locationUri.getPort());
+
+        httpResponse = targetServer.buildRequest(redirectPath)
+                .build().execute();
+
+        assertEquals("Expected Success", 200, httpResponse.getStatusCode());
+        assertEquals("Expected UndertowUser", "ladybird", httpResponse.getHeaders().get("UndertowUser").get(0));
+        assertEquals("Expected ElytronUser", "ladybird", httpResponse.getHeaders().get("ElytronUser").get(0));
+    }
+
+    @Test
+    public void testDefaultURLBare() throws Exception {
+        URI defaultUri = server.createUri();
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        bareHttpClientRunner(defaultUri.getPath(), (p) ->  defaultPath.equals(p));
+    }
+
+    @Test
+    public void testEncodedQueryStringBare() throws Exception {
+        String encodedQuery = "project=%7BElytron%20Web%7D";
+        URI defaultUri = server.createUri();
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        String path = defaultPath + "?" + encodedQuery;
+
+        bareHttpClientRunner(path, (p) -> path.equals(p));
+    }
+
+    @Test
+    public void testNonEncodedQueryStringBare() throws Exception {
+        String nonEncodedQuery = "project={ElytronWeb}";
+        URI defaultUri = server.createUri();
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        String path = defaultPath + "?" + nonEncodedQuery;
+
+        String encodedQuery = "project=%7BElytronWeb%7D";
+        String expectedPath = defaultPath + "?" + encodedQuery;
+
+        bareHttpClientRunner(path, (p) -> expectedPath.equals(p));
+    }
+
+    @Test
+    public void testEncodedPathBare() throws Exception {
+        URI defaultUri = server.createUri();
+        String encodedPath = defaultUri.getPath() + "/file%7B1%7D.txt";
+
+        bareHttpClientRunner(encodedPath, (p) -> encodedPath.equals(p));
+    }
+
+    @Test
+    public void testNonEncodedPathBare() throws Exception {
+        URI defaultUri = server.createUri();
+        String nonEncodedPath = defaultUri.getPath() + "/file{1}.txt";
+        String encodedPath = defaultUri.getPath() + "/file%7B1%7D.txt";
+        // During the round trip to the server it get's encoded.
+        bareHttpClientRunner(nonEncodedPath, (p) -> encodedPath.equals(p));
     }
 
     @Override
