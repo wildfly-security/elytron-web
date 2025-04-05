@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
+import io.undertow.UndertowOptions;
 import org.wildfly.elytron.web.undertow.common.UndertowServer;
 import org.wildfly.elytron.web.undertow.server.servlet.AuthenticationManager;
 import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
@@ -134,6 +135,7 @@ public class UndertowServletServer extends UndertowServer {
         } else {
             undertowBuilder.addHttpListener(port, "localhost");
         }
+        undertowBuilder.setServerOption(UndertowOptions.ALLOW_UNESCAPED_CHARACTERS_IN_URL, true);
 
         undertowServer = undertowBuilder.build();
 
