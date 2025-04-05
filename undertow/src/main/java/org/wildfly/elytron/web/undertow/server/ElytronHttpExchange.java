@@ -209,7 +209,8 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
             }
 
             return new URI(scheme, null, host,
-                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port, decode(path, "UTF-8"),
+                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port,
+                    path != null ? decode(path, "UTF-8") : null,
                     query == null || "".equals(query) ? null : decode(query, "UTF-8"), null);
         } catch (UnsupportedEncodingException | URISyntaxException e) {
             log.trace("Unable to construct URI", e);
