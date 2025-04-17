@@ -18,12 +18,13 @@
 package org.wildfly.elytron.web.undertow.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
-import static java.net.URLDecoder.decode;
+import static org.wildfly.elytron.web.undertow.server.UriPartialEncoder.partialEncode;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,19 +40,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-
-import org.jboss.logging.Logger;
-import org.wildfly.security.auth.server.SecurityIdentity;
-import org.wildfly.security.http.HttpAuthenticationException;
-import org.wildfly.security.http.HttpExchangeSpi;
-import org.wildfly.security.http.HttpScope;
-import org.wildfly.security.http.HttpScopeNotification;
-import org.wildfly.security.http.HttpServerCookie;
-import org.wildfly.security.http.Scope;
-import org.xnio.SslClientAuthMode;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
@@ -70,6 +58,16 @@ import io.undertow.util.AbstractAttachable;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
+import org.jboss.logging.Logger;
+import org.wildfly.elytron.web.undertow.server.UriPartialEncoder.Component;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.http.HttpAuthenticationException;
+import org.wildfly.security.http.HttpExchangeSpi;
+import org.wildfly.security.http.HttpScope;
+import org.wildfly.security.http.HttpScopeNotification;
+import org.wildfly.security.http.HttpServerCookie;
+import org.wildfly.security.http.Scope;
+import org.xnio.SslClientAuthMode;
 
 /**
  * Implementation of {@link HttpExchangeSpi} to wrap access to the Undertow specific {@link HttpServerExchange}.
@@ -207,12 +205,39 @@ public class ElytronHttpExchange implements HttpExchangeSpi {
                 port = httpServerExchange.getHostPort();
                 path = httpServerExchange.getRequestURI();
             }
+            StringBuilder uriBuilder = new StringBuilder();
+            if (scheme != null) {
+                uriBuilder.append(scheme);
+                uriBuilder.append(':');
+            }
+            if (host != null) {
+                uriBuilder.append("//");
+                boolean needBrackets = ((host.indexOf(':') >= 0)
+                        && ! host.startsWith("[")
+                        && ! host.endsWith("]"));
+                if (needBrackets) {
+                    uriBuilder.append('[');
+                }
+                uriBuilder.append(host);
+                if (needBrackets) {
+                    uriBuilder.append(']');
+                }
+            }
+            if (! (("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443))) {
+                uriBuilder.append(':');
+                uriBuilder.append(port);
+            }
 
-            return new URI(scheme, null, host,
-                    ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443) ? -1 : port,
-                    path != null ? decode(path, "UTF-8") : null,
-                    query == null || "".equals(query) ? null : decode(query, "UTF-8"), null);
-        } catch (UnsupportedEncodingException | URISyntaxException e) {
+            if (path != null) {
+                uriBuilder.append(partialEncode(path, Component.PATH));
+            }
+
+            if (query != null && ! query.isEmpty()) {
+                uriBuilder.append("?");
+                uriBuilder.append(partialEncode(query, Component.QUERY));
+            }
+            return new URI(uriBuilder.toString());
+        } catch (URISyntaxException e) {
             log.trace("Unable to construct URI", e);
             return null;
         }
