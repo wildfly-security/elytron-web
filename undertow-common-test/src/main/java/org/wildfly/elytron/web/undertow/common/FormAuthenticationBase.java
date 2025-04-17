@@ -240,6 +240,35 @@ public abstract class FormAuthenticationBase extends AbstractHttpServerMechanism
     }
 
     @Test
+    public void testEncodedQueryStringPlusBare() throws Exception {
+        // It is important that %2B does not get mapped to '+' as it can be
+        // misinterpreted as a space.
+        String encodedQuery = "project=%7BElytron%2BWeb%7D";
+        URI defaultUri = server.createUri();
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        String path = defaultPath + "?" + encodedQuery;
+
+        bareHttpClientRunner(path, (p) -> path.equals(p));
+    }
+
+    @Test
+    public void testNonEncodedQueryStringPlusBare() throws Exception {
+        String nonEncodedQuery = "project={Elytron+Web}";
+        URI defaultUri = server.createUri();
+        String defaultPath = defaultUri.getPath().isEmpty() ? "/" : defaultUri.getPath();
+
+        String path = defaultPath + "?" + nonEncodedQuery;
+
+        // In this example the caller passed in '+' directly so it is
+        // important that it is preserved.
+        String encodedQuery = "project=%7BElytron+Web%7D";
+        String expectedPath = defaultPath + "?" + encodedQuery;
+
+        bareHttpClientRunner(path, (p) -> expectedPath.equals(p));
+    }
+
+    @Test
     public void testNonEncodedQueryStringBare() throws Exception {
         String nonEncodedQuery = "project={ElytronWeb}";
         URI defaultUri = server.createUri();
