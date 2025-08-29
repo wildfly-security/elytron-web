@@ -35,6 +35,7 @@
 
     <name>WildFly Elytron Web - Parent</name>
     <description>Integration project for integrating Elytron based HTTP authentication with web containers.</description>
+    <url>https://wildfly-security.github.io/wildfly-elytron/</url>
 
     <licenses>
         <license>
@@ -42,6 +43,22 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <name>Darran Lofthouse</name>
+            <email>darran.lofthouse@jboss.com</email>
+            <organization>WildFly</organization>
+            <organizationUrl>https://www.wildfly.org/</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:wildfly-security/elytron-web.git</connection>
+        <developerConnection>scm:git:git@github.com:wildfly-security/elytron-web.git</developerConnection>
+        <url>https://github.com/wildfly-security/elytron-web</url>
+      <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <version.io.undertow>2.2.3.Final</version.io.undertow>
@@ -66,8 +83,14 @@
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
 
+        <!-- Java Version Information -->
         <jdk.min.version>11</jdk.min.version>
         <maven.compiler.release>8</maven.compiler.release>
+
+        <!-- Nexus Settings -->
+        <nexus.repository.staging>wildfly-staging</nexus.repository.staging>
+        <nexus.staging.tag>elytron-web-${project.version}</nexus.staging.tag>
+        <nexus.repository.release>wildfly-security</nexus.repository.release>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
