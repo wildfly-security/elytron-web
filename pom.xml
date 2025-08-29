@@ -17,9 +17,7 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -30,7 +28,7 @@
 
     <groupId>org.wildfly.security.elytron-web</groupId>
     <artifactId>elytron-web-parent</artifactId>
-    <version>4.2.0.CR1-SNAPSHOT</version>
+    <version>4.2.0.Alpha1</version>
     <packaging>pom</packaging>
 
     <name>WildFly Elytron Web - Parent</name>
@@ -57,7 +55,7 @@
         <connection>scm:git:git@github.com:wildfly-security/elytron-web.git</connection>
         <developerConnection>scm:git:git@github.com:wildfly-security/elytron-web.git</developerConnection>
         <url>https://github.com/wildfly-security/elytron-web</url>
-      <tag>HEAD</tag>
+      <tag>4.2.0.Alpha1</tag>
     </scm>
 
     <properties>
@@ -96,8 +94,8 @@
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
-        <modular.jdk.args/>
-        <modular.jdk.props/>
+        <modular.jdk.args />
+        <modular.jdk.props />
     </properties>
 
     <modules>
@@ -195,7 +193,7 @@
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                        <useFile/>
+                        <useFile />
                     </configuration>
                     <dependencies>
                         <dependency>
