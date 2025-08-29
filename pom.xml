@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>35</version>
+        <version>50</version>
     </parent>
 
     <groupId>org.wildfly.security.elytron-web</groupId>
@@ -35,6 +35,7 @@
 
     <name>WildFly Elytron Web - Parent</name>
     <description>Integration project for integrating Elytron based HTTP authentication with web containers.</description>
+    <url>https://wildfly-security.github.io/wildfly-elytron/</url>
 
     <licenses>
         <license>
@@ -42,6 +43,22 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <name>Darran Lofthouse</name>
+            <email>darran.lofthouse@jboss.com</email>
+            <organization>WildFly</organization>
+            <organizationUrl>https://www.wildfly.org/</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:wildfly-security/elytron-web.git</connection>
+        <developerConnection>scm:git:git@github.com:wildfly-security/elytron-web.git</developerConnection>
+        <url>https://github.com/wildfly-security/elytron-web</url>
+      <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <version.io.undertow>2.3.10.Final</version.io.undertow>
@@ -68,8 +85,15 @@
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
 
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- Java Version Information -->
+        <jdk.min.version>11</jdk.min.version>
+        <maven.compiler.release>8</maven.compiler.release>
+
+        <!-- Nexus Settings -->
+        <nexus.repository.staging>wildfly-staging</nexus.repository.staging>
+        <nexus.staging.tag>elytron-web-${project.version}</nexus.staging.tag>
+        <nexus.repository.release>wildfly-security</nexus.repository.release>
+
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
         <modular.jdk.args/>
@@ -102,6 +126,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <!-- Release Plugin Configuration -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <!-- Prepare -->
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <tagNameFormat>@{project.version}</tagNameFormat>
+                    <pushChanges>false</pushChanges>
+                    <!-- Perform -->
+                    <localCheckout>true</localCheckout>
+                </configuration>
             </plugin>
         </plugins>
 
@@ -145,20 +182,6 @@
                                 <mainClass>org.wildfly.security._private.Main</mainClass>
                             </manifest>
                         </archive>
-                    </configuration>
-                </plugin>
-
-                <!-- Javadoc -->
-                <plugin>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <doclet>net.gleamynode.apiviz.APIviz</doclet>
-                        <docletArtifact>
-                            <groupId>org.jboss.apiviz</groupId>
-                            <artifactId>apiviz</artifactId>
-                            <version>1.3.2.GA</version>
-                        </docletArtifact>
-                        <excludePackageNames>*._private</excludePackageNames>
                     </configuration>
                 </plugin>
 
