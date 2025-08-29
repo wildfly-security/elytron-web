@@ -86,7 +86,7 @@
         <linkXRef>false</linkXRef>
 
         <!-- Java Version Information -->
-        <jdk.min.version>11</jdk.min.version>
+        <jdk.min.version>21</jdk.min.version>
         <maven.compiler.release>8</maven.compiler.release>
 
         <!-- Nexus Settings -->
