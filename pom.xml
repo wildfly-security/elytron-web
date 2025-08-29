@@ -87,7 +87,7 @@
 
         <!-- Java Version Information -->
         <jdk.min.version>21</jdk.min.version>
-        <maven.compiler.release>8</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
 
         <!-- Nexus Settings -->
         <nexus.repository.staging>wildfly-staging</nexus.repository.staging>
