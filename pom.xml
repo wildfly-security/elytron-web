@@ -83,8 +83,14 @@
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
 
+        <!-- Java Version Information -->
         <jdk.min.version>11</jdk.min.version>
         <maven.compiler.release>8</maven.compiler.release>
+
+        <!-- Nexus Settings -->
+        <nexus.repository.staging>wildfly-staging</nexus.repository.staging>
+        <nexus.staging.tag>elytron-web-${project.version}</nexus.staging.tag>
+        <nexus.repository.release>wildfly-security</nexus.repository.release>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
