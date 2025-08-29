@@ -59,7 +59,7 @@
     </scm>
 
     <properties>
-        <version.io.undertow>2.3.10.Final</version.io.undertow>
+        <version.io.undertow>2.3.18.Final</version.io.undertow>
         <version.org.wildfly.security.elytron>2.6.3.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.6.0.Final</version.org.wildfly.common>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.1.Final</version.org.wildfly.security.jakarta.elytron-ee>
