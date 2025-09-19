@@ -41,6 +41,18 @@ public class TestServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        manageLoginHeaders(req, resp);
+        if (req.getParameter("logout") != null) {
+            req.logout();
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        doGet(req, resp);
+    }
+
+    static void manageLoginHeaders(HttpServletRequest req, HttpServletResponse resp) {
         resp.addHeader(PROCESSED_BY, "ResponseHandler");
         String undertowUser = getUndertowUser(req);
         if (undertowUser != null) {
@@ -50,17 +62,14 @@ public class TestServlet extends HttpServlet {
         if (elytronUser != null) {
             resp.addHeader(ELYTRON_USER, elytronUser);
         }
-        if (req.getParameter("logout") != null) {
-            req.logout();
-        }
     }
 
-    private String getUndertowUser(final HttpServletRequest request) {
+    private static String getUndertowUser(final HttpServletRequest request) {
         Principal principal = request.getUserPrincipal();
         return principal != null ? principal.getName() : null;
     }
 
-    private String getElytronUser() {
+    private static String getElytronUser() {
         SecurityDomain securityDomain = SecurityDomain.getCurrent();
         if (securityDomain != null) {
             SecurityIdentity securityIdentity = securityDomain.getCurrentSecurityIdentity();

@@ -78,21 +78,28 @@ public class UndertowServletServer extends UndertowServer {
         return Servlets.deployment()
             .setClassLoader(TestServlet.class.getClassLoader())
             .setContextPath(contextRoot)
-            .setDeploymentName(deploymentName)
+            .setDeploymentName("helloworld.war")
             .setLoginConfig(new LoginConfig(authenticationMechanism, "Elytron Realm", "/login", "/error"))
             .addSecurityConstraint(new SecurityConstraint()
-                .addWebResourceCollection(new WebResourceCollection()
-                        .addUrlPattern(SERVLET + "/*"))
-                .addRoleAllowed("**")
-                .setEmptyRoleSemantic(SecurityInfo.EmptyRoleSemantic.DENY))
+                    .addWebResourceCollection(new WebResourceCollection()
+                            .addUrlPattern(SERVLET + "/*"))
+                    .addRoleAllowed("**")
+                    .setEmptyRoleSemantic(SecurityInfo.EmptyRoleSemantic.DENY))
             .addServlets(Servlets.servlet(TestServlet.class)
-                .addMapping("/")
-                .addMapping(SERVLET)
-                .addMapping("/unsecure"),
-                Servlets.servlet(LoginServlet.class)
-                    .addMapping("/login"),
-                Servlets.servlet(LogoutServlet.class)
-                    .addMapping("/logout"));
+                    .addMapping("/")
+                    .addMapping(SERVLET)
+                    .addMapping("/unsecure"),
+                    Servlets.servlet(LoginServlet.class)
+                        .addMapping("/login"),
+                    Servlets.servlet(LogoutServlet.class)
+                        .addMapping("/logout"),
+                    Servlets.servlet(InputStreamServlet.class)
+                        .addMapping("/input-stream"),
+                    Servlets.servlet(ParametersServlet.class)
+                        .addMapping("/parameters"),
+                    Servlets.servlet(MultiPartServlet.class)
+                        .addMapping("/multipart")
+                        .setMultipartConfig(Servlets.multipartConfig(null, 0, 0, 0)));
     }
 
     @Override
