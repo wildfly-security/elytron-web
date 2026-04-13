@@ -1,0 +1,121 @@
+name: CI - Non-LTS Testing
+
+on:
+  schedule:
+    # Run nightly at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      enabled:
+        description: 'Enable non-LTS testing'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  test-non-lts:
+    name: Test - Java 26 - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    # Allow disabling via workflow_dispatch
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.enabled == 'true' }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # 2. Install JDK 25 for building
+      - name: Set up JDK 25 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+      
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      # 3. Install JDK 26 for testing
+      - name: Set up JDK 26 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '26'
+      
+      # 4. Generate toolchains.xml
+      - name: Generate toolchains.xml
+        shell: bash
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/toolchains.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains xmlns="http://maven.apache.org/TOOLCHAINS/1.1.0"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="http://maven.apache.org/TOOLCHAINS/1.1.0
+                                          http://maven.apache.org/xsd/toolchains-1.1.0.xsd">
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>26</version>
+                <vendor>temurin</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${env.JAVA_HOME_26_X64}</jdkHome>
+              </configuration>
+            </toolchain>
+          </toolchains>
+          EOF
+          
+          # Expand environment variables
+          if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+            # Windows: Use PowerShell for variable expansion
+            powershell -Command "(Get-Content ~/.m2/toolchains.xml) -replace '\$\{env\.([^}]+)\}', { \$env:(\$matches[1]) } | Set-Content ~/.m2/toolchains.xml"
+          else
+            # Linux/macOS: Use envsubst
+            envsubst < ~/.m2/toolchains.xml > ~/.m2/toolchains.xml.tmp
+            mv ~/.m2/toolchains.xml.tmp ~/.m2/toolchains.xml
+          fi
+      
+      # 5. Build with Java 25
+      - name: Build with Java 25
+        shell: bash
+        run: |
+          export JAVA_HOME="${JAVA_HOME_25_X64}"
+          mvn clean install -DskipTests -B -V
+      
+      # 6. Test with Java 26
+      - name: Test with Java 26 (Temurin)
+        shell: bash
+        timeout-minutes: 30
+        run: |
+          mvn test -Djdk.test.version=26 -Djdk.test.vendor=temurin -B
+        continue-on-error: true
+      
+      - name: Publish test results - Java 26 (Temurin) - ${{ matrix.os }}
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: '**/target/surefire-reports/TEST-*.xml'
+          check_name: 'Test Results - Java 26 (Temurin) - ${{ matrix.os }}'
+          comment_mode: off
+      
+      - name: Upload test results - Java 26 (Temurin) - ${{ matrix.os }}
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-java26-temurin-${{ matrix.os }}
+          path: '**/target/surefire-reports/**'
+          retention-days: 30
