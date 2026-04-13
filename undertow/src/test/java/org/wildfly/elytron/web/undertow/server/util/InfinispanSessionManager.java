@@ -45,7 +45,9 @@ import io.undertow.server.session.SessionManagerStatistics;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.ConcurrentDirectDeque;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -132,17 +134,19 @@ public class InfinispanSessionManager implements SessionManager, SessionManagerS
         expiredSessionCount.set(0);
         // here we create a replicated cache using a cluster with name 'default-cluster'.
         // sessions are replicate across all nodes joining the same cluster.
-        this.cacheManager = new DefaultCacheManager(
-                GlobalConfigurationBuilder.defaultClusteredBuilder()
-                        .globalJmxStatistics().cacheManagerName(deploymentName)
-                        .transport().nodeName(deploymentName).clusterName("default-cluster")
-                        .build(),
-                new ConfigurationBuilder()
-                        .clustering()
-                        .cacheMode(CacheMode.REPL_SYNC)
-                        .build()
-        );
-        this.sessions = cacheManager.getCache();
+        GlobalConfiguration globalConfig = GlobalConfigurationBuilder.defaultClusteredBuilder()
+                .cacheManagerName(deploymentName)
+                .transport().nodeName(deploymentName).clusterName("default-cluster")
+                .build();
+
+        Configuration cacheConfig = new ConfigurationBuilder()
+                .clustering()
+                .cacheMode(CacheMode.REPL_SYNC)
+                .build();
+
+        this.cacheManager = new DefaultCacheManager(globalConfig);
+        cacheManager.defineConfiguration(deploymentName, cacheConfig);
+        this.sessions = cacheManager.getCache(deploymentName);
         startTime = System.currentTimeMillis();
     }
 
