@@ -25,7 +25,9 @@ import org.infinispan.Cache;
 import org.infinispan.commons.configuration.ClassAllowList;
 import org.infinispan.commons.marshall.JavaSerializationMarshaller;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -85,17 +87,20 @@ public class FormServletAuthenticationWithClusteredSSOTest extends FormAuthentic
         ClassAllowList allowList = new ClassAllowList();
         allowList.addRegexps(".*");
 
-        EmbeddedCacheManager cacheManager = new DefaultCacheManager(
-                GlobalConfigurationBuilder.defaultClusteredBuilder()
-                        .globalJmxStatistics().cacheManagerName(cacheManagerName).defaultCacheName("Default")
-                        .transport().nodeName(cacheManagerName).addProperty(JGroupsTransport.CONFIGURATION_FILE, "fast.xml")
-                        .serialization().marshaller(new JavaSerializationMarshaller(allowList))
-                        .build(),
-                new ConfigurationBuilder()
-                        .clustering()
-                        .cacheMode(CacheMode.REPL_SYNC)
-                        .build()
-        );
+        GlobalConfiguration globalConfig = GlobalConfigurationBuilder.defaultClusteredBuilder()
+                .cacheManagerName(cacheManagerName)
+                .defaultCacheName("Default")
+                .transport().nodeName(cacheManagerName).addProperty(JGroupsTransport.CONFIGURATION_FILE, "fast.xml")
+                .serialization().marshaller(new JavaSerializationMarshaller(allowList))
+                .build();
+
+        Configuration cacheConfig = new ConfigurationBuilder()
+                .clustering()
+                .cacheMode(CacheMode.REPL_SYNC)
+                .build();
+
+        EmbeddedCacheManager cacheManager = new DefaultCacheManager(globalConfig);
+        cacheManager.defineConfiguration("Default", cacheConfig);
 
         Cache<String, SingleSignOnEntry> cache = cacheManager.getCache();
         SingleSignOnManager manager = new DefaultSingleSignOnManager(cache, new DefaultSingleSignOnSessionIdentifierFactory(), (id, entry) -> cache.put(id, entry));
