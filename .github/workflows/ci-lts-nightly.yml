@@ -24,12 +24,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      # 2. Install all required JDKs
+      # 2. Install all required JDKs and capture their paths
       - name: Set up JDK 17 (Temurin)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+      
+      - name: Capture JDK 17 (Temurin) path
+        shell: bash
+        run: echo "JAVA_HOME_17_TEMURIN=$JAVA_HOME" >> $GITHUB_ENV
       
       - name: Set up JDK 17 (Semeru)
         uses: actions/setup-java@v4
@@ -37,11 +41,19 @@ jobs:
           distribution: 'semeru'
           java-version: '17'
       
+      - name: Capture JDK 17 (Semeru) path
+        shell: bash
+        run: echo "JAVA_HOME_17_SEMERU=$JAVA_HOME" >> $GITHUB_ENV
+      
       - name: Set up JDK 21 (Temurin)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+      
+      - name: Capture JDK 21 (Temurin) path
+        shell: bash
+        run: echo "JAVA_HOME_21_TEMURIN=$JAVA_HOME" >> $GITHUB_ENV
       
       - name: Set up JDK 21 (Semeru)
         uses: actions/setup-java@v4
@@ -49,11 +61,19 @@ jobs:
           distribution: 'semeru'
           java-version: '21'
       
+      - name: Capture JDK 21 (Semeru) path
+        shell: bash
+        run: echo "JAVA_HOME_21_SEMERU=$JAVA_HOME" >> $GITHUB_ENV
+      
       - name: Set up JDK 25 (Temurin)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '25'
+      
+      - name: Capture JDK 25 (Temurin) path
+        shell: bash
+        run: echo "JAVA_HOME_25_TEMURIN=$JAVA_HOME" >> $GITHUB_ENV
       
       - name: Cache Maven packages
         uses: actions/cache@v4
@@ -68,6 +88,10 @@ jobs:
         with:
           distribution: 'semeru'
           java-version: '25'
+      
+      - name: Capture JDK 25 (Semeru) path
+        shell: bash
+        run: echo "JAVA_HOME_25_SEMERU=$JAVA_HOME" >> $GITHUB_ENV
       
       # 3. Generate toolchains.xml
       - name: Generate toolchains.xml
@@ -87,7 +111,7 @@ jobs:
                 <vendor>temurin</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_17_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_17_TEMURIN}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -97,7 +121,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_17_IBM_Semeru_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_17_SEMERU}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -107,7 +131,7 @@ jobs:
                 <vendor>temurin</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_21_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_21_TEMURIN}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -117,7 +141,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_21_IBM_Semeru_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_21_SEMERU}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -127,7 +151,7 @@ jobs:
                 <vendor>temurin</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_25_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_25_TEMURIN}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -137,7 +161,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_25_IBM_Semeru_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_25_SEMERU}</jdkHome>
               </configuration>
             </toolchain>
           </toolchains>
@@ -157,7 +181,7 @@ jobs:
       - name: Build with Java 25
         shell: bash
         run: |
-          export JAVA_HOME="${JAVA_HOME_25_X64}"
+          export JAVA_HOME="${JAVA_HOME_25_TEMURIN}"
           mvn clean install -DskipTests -B -V
       
       # 5. Run tests with Java 17 (Temurin)
