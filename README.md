@@ -11,17 +11,26 @@ An "elytron" (ĕl´·ĭ·trŏn, plural "elytra") is the hard, protective casing 
 $ git clone git@github.com:wildfly-security/elytron-web.git
 ```
 
+### Prerequisites
+
+- **Java 25** (or later) - Required for building
+- **Maven 3.9+** - For building and testing
+
+**Note**: The project builds with Java 25 but targets Java 17 bytecode for backward compatibility.
+
 ### Setup the JBoss Maven Repository
 
 To use dependencies from JBoss.org, you need to add the JBoss Maven Repositories to your Maven settings.xml. For details see http://community.jboss.org/wiki/MavenGettingStarted-Users
 
 ### Build with Maven
 
-The command below builds the project and runs the embedded suite.
+The command below builds the project and runs the embedded suite:
 
 ```console
 $ mvn clean install
 ```
+
+For detailed build instructions, testing with specific Java versions, and information about our CI system, see our [contribution guide](https://github.com/wildfly-security/elytron-web/blob/1.x/CONTRIBUTING.md#setting-up-your-developer-environment).
 
 Issue Tracking
 --------------
