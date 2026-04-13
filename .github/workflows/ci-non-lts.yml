@@ -33,12 +33,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      # 2. Install JDK 25 for building
-      - name: Set up JDK 25 (Temurin)
+      # 2. Install JDK 26 for building and testing
+      - name: Set up JDK 26 (Temurin) - Build
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '25'
+          java-version: '26'
+      
+      - name: Capture JDK 26 path
+        shell: bash
+        run: |
+          echo "JAVA_HOME_26_TEMURIN=$JAVA_HOME" >> $GITHUB_ENV
       
       - name: Cache Maven packages
         uses: actions/cache@v4
@@ -48,12 +53,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       
-      # 3. Install JDK 26 for testing
-      - name: Set up JDK 26 (Temurin)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '26'
+
       
       # 4. Generate toolchains.xml
       - name: Generate toolchains.xml
@@ -73,7 +73,7 @@ jobs:
                 <vendor>temurin</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_26_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_26_TEMURIN}</jdkHome>
               </configuration>
             </toolchain>
           </toolchains>
@@ -89,11 +89,11 @@ jobs:
             mv ~/.m2/toolchains.xml.tmp ~/.m2/toolchains.xml
           fi
       
-      # 5. Build with Java 25
-      - name: Build with Java 25
+      # 5. Build with Java 26
+      - name: Build with Java 26
         shell: bash
         run: |
-          export JAVA_HOME="${JAVA_HOME_25_X64}"
+          export JAVA_HOME="${JAVA_HOME_26_TEMURIN}"
           mvn clean install -DskipTests -B -V
       
       # 6. Test with Java 26
