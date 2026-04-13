@@ -80,9 +80,9 @@ jobs:
           EOF
           
           # Expand environment variables
-          if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
             # Windows: Use PowerShell for variable expansion
-            powershell -Command "(Get-Content ~/.m2/toolchains.xml) -replace '\$\{env\.([^}]+)\}', { \$env:(\$matches[1]) } | Set-Content ~/.m2/toolchains.xml"
+            powershell -Command "\$content = Get-Content ~/.m2/toolchains.xml -Raw; \$content = \$content -replace '\\\$\{env\.JAVA_HOME_26_TEMURIN\}', \$env:JAVA_HOME_26_TEMURIN; \$content | Set-Content ~/.m2/toolchains.xml -NoNewline"
           else
             # Linux/macOS: Use envsubst
             envsubst < ~/.m2/toolchains.xml > ~/.m2/toolchains.xml.tmp
@@ -105,7 +105,7 @@ jobs:
         continue-on-error: true
       
       - name: Publish test results - Java 26 (Temurin) - ${{ matrix.os }}
-        if: always()
+        if: always() && runner.os == 'Linux'
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: '**/target/surefire-reports/TEST-*.xml'
