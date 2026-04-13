@@ -97,7 +97,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_17_SEMERU_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_17_IBM_Semeru_X64}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -117,7 +117,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_21_SEMERU_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_21_IBM_Semeru_X64}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -137,7 +137,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_25_SEMERU_X64}</jdkHome>
+                <jdkHome>${env.JAVA_HOME_25_IBM_Semeru_X64}</jdkHome>
               </configuration>
             </toolchain>
           </toolchains>
