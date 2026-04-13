@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>50</version>
+        <version>52</version>
     </parent>
 
     <groupId>org.wildfly.security.elytron-web</groupId>
@@ -84,7 +84,7 @@
         <linkXRef>false</linkXRef>
 
         <!-- Java Version Information -->
-        <jdk.min.version>21</jdk.min.version>
+        <jdk.min.version>25</jdk.min.version>
         <maven.compiler.release>17</maven.compiler.release>
 
         <!-- Nexus Settings -->
