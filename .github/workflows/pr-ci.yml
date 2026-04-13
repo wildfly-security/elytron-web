@@ -89,7 +89,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.m2
-          cat > ~/.m2/toolchains.xml << 'EOF'
+          cat > ~/.m2/toolchains.xml << EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <toolchains xmlns="http://maven.apache.org/TOOLCHAINS/1.1.0"
                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -102,7 +102,7 @@ jobs:
                 <vendor>temurin</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_17_TEMURIN}</jdkHome>
+                <jdkHome>${JAVA_HOME_17_TEMURIN}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -112,7 +112,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_17_SEMERU}</jdkHome>
+                <jdkHome>${JAVA_HOME_17_SEMERU}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -122,7 +122,7 @@ jobs:
                 <vendor>temurin</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_21_TEMURIN}</jdkHome>
+                <jdkHome>${JAVA_HOME_21_TEMURIN}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -132,7 +132,7 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_21_SEMERU}</jdkHome>
+                <jdkHome>${JAVA_HOME_21_SEMERU}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -142,7 +142,7 @@ jobs:
                 <vendor>temurin</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_25_TEMURIN}</jdkHome>
+                <jdkHome>${JAVA_HOME_25_TEMURIN}</jdkHome>
               </configuration>
             </toolchain>
             <toolchain>
@@ -152,15 +152,11 @@ jobs:
                 <vendor>semeru</vendor>
               </provides>
               <configuration>
-                <jdkHome>${env.JAVA_HOME_25_SEMERU}</jdkHome>
+                <jdkHome>${JAVA_HOME_25_SEMERU}</jdkHome>
               </configuration>
             </toolchain>
           </toolchains>
           EOF
-          
-          # Expand environment variables in toolchains.xml
-          envsubst < ~/.m2/toolchains.xml > ~/.m2/toolchains.xml.tmp
-          mv ~/.m2/toolchains.xml.tmp ~/.m2/toolchains.xml
       
       # 4. Build once with Java 25
       - name: Build with Java 25
