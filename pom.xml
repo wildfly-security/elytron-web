@@ -73,7 +73,7 @@
         <version.org.infinispan>9.3.9.Final</version.org.infinispan>
         <version.org.jboss.spec.jboss-json-api_1.0_spec>1.0.1.Final</version.org.jboss.spec.jboss-json-api_1.0_spec>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
-        <version.com.nimbusds.nimbus-jose-jwt>8.2.1</version.com.nimbusds.nimbus-jose-jwt>
+        <version.com.nimbusds.nimbus-jose-jwt>8.23</version.com.nimbusds.nimbus-jose-jwt>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.surefire.plugin>2.19.1</version.surefire.plugin>
 
@@ -92,8 +92,8 @@
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
-        <modular.jdk.args />
-        <modular.jdk.props />
+        <modular.jdk.args/>
+        <modular.jdk.props/>
     </properties>
 
     <modules>
@@ -192,7 +192,7 @@
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                        <useFile />
+                        <useFile/>
                     </configuration>
                     <dependencies>
                         <dependency>
