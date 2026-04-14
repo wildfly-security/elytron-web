@@ -59,7 +59,7 @@
     </scm>
 
     <properties>
-        <version.io.undertow>2.2.3.Final</version.io.undertow>
+        <version.io.undertow>2.3.24.Final</version.io.undertow>
         <version.org.wildfly.security.elytron>1.15.26.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
         <version.org.apache.httpcomponents.httpclient>4.5.13</version.org.apache.httpcomponents.httpclient>
@@ -92,8 +92,8 @@
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
-        <modular.jdk.args />
-        <modular.jdk.props />
+        <modular.jdk.args/>
+        <modular.jdk.props/>
     </properties>
 
     <modules>
@@ -192,7 +192,7 @@
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                        <useFile />
+                        <useFile/>
                     </configuration>
                     <dependencies>
                         <dependency>
