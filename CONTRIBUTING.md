@@ -47,38 +47,197 @@ Once you have selected an issue you'd like to work on, make sure it's not alread
 It is recommended that you use a separate branch for every issue you work on. To keep things straightforward and memorable, you can name each branch using the JIRA issue number. This way, you can have multiple PRs open for different issues. For example, if you were working on [ELYWEB-146](https://issues.redhat.com/browse/ELYWEB-146), you could use ELYWEB-146 as your branch name.
 
 ## Setting up your Developer Environment
+
+### Prerequisites
+
 You will need:
 
-* JDK 11
-* Git
-* Maven 3.3.9 or later
+* **JDK 25** (or later) - Required for building
+* **Git** - For version control
+* **Maven 3.9+** - For building and testing
 * An [IDE](https://en.wikipedia.org/wiki/Comparison_of_integrated_development_environments#Java)
 (e.g., [IntelliJ IDEA](https://www.jetbrains.com/idea/download/), [Eclipse](https://www.eclipse.org/downloads/), etc.)
 
+**Note**: The project builds with Java 25 but targets Java 17 bytecode for backward compatibility with older LTS releases.
+
+### Getting Started
+
 First `cd` to the directory where you cloned the project (eg: `cd elytron-web`)
 
-Add a remote ref to upstream, for pulling future updates.
-For example:
+Add a remote ref to upstream, for pulling future updates:
 
-```
+```bash
 git remote add upstream https://github.com/wildfly-security/elytron-web
 ```
-To build `elytron-web` run:
+
+### Building the Project
+
+#### Simple Build and Test
+
+The simplest way to build and test the project:
+
 ```bash
 mvn clean install
 ```
 
-To skip the tests, use:
+This will:
+- Compile the code with Java 25
+- Target Java 17 bytecode (for backward compatibility)
+- Run tests with Java 25
+
+#### Build Without Tests
+
+To build faster without running tests:
 
 ```bash
-mvn clean install -DskipTests=true
+mvn clean install -DskipTests
 ```
 
-To run only a specific test, use:
+#### Run Specific Test
+
+To run only a specific test:
 
 ```bash
 mvn clean install -Dtest=TestClassName
 ```
+
+### Advanced Testing
+
+#### Testing with Specific Java Versions
+
+Our CI system tests the code against multiple Java versions (17, 21, and 25) and JDK distributions (Temurin and Semeru). You can reproduce these tests locally using Maven toolchains.
+
+**Prerequisites for Multi-Version Testing**:
+
+1. **Install Multiple JDKs**: You need Java 17, 21, and 25 installed
+   - Recommended: Use [SDKMAN](https://sdkman.io/) for easy JDK management
+   - Or download from [Adoptium](https://adoptium.net/) (Temurin) or [IBM Semeru](https://developer.ibm.com/languages/java/semeru-runtimes/)
+
+2. **Configure Maven Toolchains**: Create or update `~/.m2/toolchains.xml`
+   
+   A template is provided in the project root: `toolchains.xml.template`
+   
+   Example configuration:
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <toolchains>
+     <toolchain>
+       <type>jdk</type>
+       <provides>
+         <version>17</version>
+         <vendor>temurin</vendor>
+       </provides>
+       <configuration>
+         <jdkHome>/path/to/jdk-17-temurin</jdkHome>
+       </configuration>
+     </toolchain>
+     <toolchain>
+       <type>jdk</type>
+       <provides>
+         <version>21</version>
+         <vendor>temurin</vendor>
+       </provides>
+       <configuration>
+         <jdkHome>/path/to/jdk-21-temurin</jdkHome>
+       </configuration>
+     </toolchain>
+     <toolchain>
+       <type>jdk</type>
+       <provides>
+         <version>25</version>
+         <vendor>temurin</vendor>
+       </provides>
+       <configuration>
+         <jdkHome>/path/to/jdk-25-temurin</jdkHome>
+       </configuration>
+     </toolchain>
+     <!-- Add similar entries for Semeru distribution if needed -->
+   </toolchains>
+   ```
+
+3. **Verify Toolchains Setup**:
+   ```bash
+   mvn toolchains:display-toolchains
+   ```
+
+**Testing with a Specific Java Version**:
+
+```bash
+# Test with Java 17 (Temurin)
+mvn test -Djdk.test.version=17
+
+# Test with Java 21 (Semeru)
+mvn test -Djdk.test.version=21 -Djdk.test.vendor=semeru
+
+# Test with Java 25 (default - uses build JDK)
+mvn test
+```
+
+**Testing All Versions at Once**:
+
+```bash
+# Test with all LTS versions (17, 21, 25) using Temurin
+mvn clean install -Ptest-all-versions
+
+# Test with all LTS versions using Semeru
+mvn install -Ptest-all-versions -Djdk.test.vendor=semeru
+```
+
+This will run the test suite three times (once for each Java version) and create separate test reports in:
+- `target/surefire-reports-java17-{vendor}/`
+- `target/surefire-reports-java21-{vendor}/`
+- `target/surefire-reports-java25-{vendor}/`
+
+### Continuous Integration
+
+This project uses GitHub Actions to ensure code quality and compatibility across multiple Java versions and platforms.
+
+#### Testing Strategy
+
+**Build Once, Test Multiple Times**:
+- Code is compiled once with Java 25, targeting Java 17 bytecode
+- Tests are executed against multiple Java versions: 17, 21, and 25
+- Tests run with two JDK distributions: Temurin (HotSpot) and Semeru (OpenJ9)
+- Tests run on three platforms: Linux, Windows, and macOS
+
+**Total Test Permutations**: 18 (3 Java versions × 2 distributions × 3 platforms)
+
+#### CI Workflows
+
+**Pull Request Testing** (`.github/workflows/pr-ci.yml`):
+- Runs on every pull request
+- Tests all 6 JDK permutations on Linux only
+- Provides fast feedback (typically 10-15 minutes)
+- Must pass before merging
+
+**Nightly Testing** (`.github/workflows/ci-lts-nightly.yml`):
+- Runs nightly at 2 AM UTC and on pushes to main branches
+- Tests all 18 permutations (all platforms)
+- Comprehensive coverage to catch platform-specific issues
+- Scheduled to avoid resource contention with PR testing
+
+**Non-LTS Testing** (`.github/workflows/ci-non-lts.yml`):
+- Tests with latest non-LTS Java version (e.g., Java 26)
+- Runs nightly at 3 AM UTC
+- Helps prepare for next LTS release
+- Can be disabled during LTS transition periods
+- Failures don't block development
+
+#### Reproducing CI Failures
+
+If CI reports a failure on a specific Java version or distribution, you can reproduce it locally:
+
+1. **Identify the failing permutation** from the CI logs (e.g., "Java 21 Semeru on Windows")
+
+2. **Install the specific JDK** if you don't have it already
+
+3. **Run tests with that configuration**:
+   ```bash
+   mvn test -Djdk.test.version=21 -Djdk.test.vendor=semeru
+   ```
+
+4. **Check the test reports** in `target/surefire-reports-java21-semeru/`
+
 For more information, including details on how Elytron Web is integrated in WildFly Core and WildFly, check out our [developer guide](https://wildfly-security.github.io/wildfly-elytron/getting-started-for-developers/).
 
 ## Contributing Guidelines
