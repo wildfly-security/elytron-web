@@ -60,6 +60,9 @@ public class SecurityContextImpl extends AbstractSecurityContext {
     private Runnable logoutHandler;
     private AuthenticationMode authMode;
 
+    // Shadow parent's authenticationRequired field to allow Jakarta Authorization Policy override
+    private boolean authenticationRequired = false;
+
     protected SecurityContextImpl(Builder builder) {
         super(checkNotNullParam("exchange", builder.exchange));
         this.httpExchange = checkNotNullParam("httpExchange", builder.httpExchange);
@@ -141,6 +144,28 @@ public class SecurityContextImpl extends AbstractSecurityContext {
         if(flexibleIdentityAssociation != null) {
             flexibleIdentityAssociation.setIdentity(securityDomain.getAnonymousSecurityIdentity());
         }
+    }
+
+    @Override
+    public void setAuthenticationRequired() {
+        this.authenticationRequired = true;
+    }
+
+    @Override
+    public boolean isAuthenticationRequired() {
+        return this.authenticationRequired;
+    }
+
+    /**
+     * Set the authentication requirement directly.
+     *
+     * Used by Jakarta Authorization Policy to override constraint-based decisions.
+     * This allows Policy to have final authority over whether authentication is required.
+     *
+     * @param required true if authentication is required, false if resource is unchecked
+     */
+    public void setAuthenticationRequired(boolean required) {
+        this.authenticationRequired = required;
     }
 
     protected void authenticationComplete(SecurityIdentity securityIdentity, String mechanism) {
