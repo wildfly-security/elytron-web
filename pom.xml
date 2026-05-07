@@ -28,7 +28,7 @@
 
     <groupId>org.wildfly.security.elytron-web</groupId>
     <artifactId>elytron-web-parent</artifactId>
-    <version>4.2.0.CR2-SNAPSHOT</version>
+    <version>4.2.0.Final</version>
     <packaging>pom</packaging>
 
     <name>WildFly Elytron Web - Parent</name>
@@ -55,7 +55,7 @@
         <connection>scm:git:git@github.com:wildfly-security/elytron-web.git</connection>
         <developerConnection>scm:git:git@github.com:wildfly-security/elytron-web.git</developerConnection>
         <url>https://github.com/wildfly-security/elytron-web</url>
-      <tag>4.2.0.Alpha1</tag>
+      <tag>4.2.0.Final</tag>
     </scm>
 
     <properties>
