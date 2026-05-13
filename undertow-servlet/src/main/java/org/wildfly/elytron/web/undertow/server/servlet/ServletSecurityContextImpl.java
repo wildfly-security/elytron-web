@@ -44,6 +44,7 @@ import jakarta.security.auth.message.config.AuthConfigFactory;
 import jakarta.security.auth.message.config.AuthConfigProvider;
 import jakarta.security.auth.message.config.ServerAuthConfig;
 import jakarta.security.auth.message.config.ServerAuthContext;
+import jakarta.security.jacc.PolicyContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -164,8 +165,11 @@ public class ServletSecurityContextImpl extends SecurityContextImpl {
         final Subject serverSubject = null;
 
         final String authContextId = serverAuthConfig.getAuthContextID(messageInfo);
-        // TODO Configured properties.
-        final ServerAuthContext serverAuthContext = serverAuthConfig.getAuthContext(authContextId, null, Collections.emptyMap());
+        final String policyContextId = PolicyContext.getContextID();
+        final Map<String, String> authContextProperties = policyContextId != null
+                ? Collections.singletonMap(PolicyContext.class.getName(), policyContextId)
+                : Collections.emptyMap();
+        final ServerAuthContext serverAuthContext = serverAuthConfig.getAuthContext(authContextId, null, authContextProperties);
 
         if (serverAuthContext == null) {
             log.trace("No ServerAuthContext returned, JASPI authentication can not proceed.");
