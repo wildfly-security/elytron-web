@@ -110,6 +110,7 @@ public class UndertowCoreServer extends UndertowServer {
         private String deploymentName;
         private Supplier<SSLContext> serverSslContext;
         private String remoteUser = null;
+        private Supplier<MechanismConfigurationSelector> mechanismConfigurationSelectorSupplier;
 
         public Builder setSecurityDomain(final SecurityDomain securityDomain) {
             this.securityDomain = securityDomain;
@@ -165,6 +166,12 @@ public class UndertowCoreServer extends UndertowServer {
             return this;
         }
 
+        public Builder setMechanismConfigurationSelectorSupplier(Supplier<MechanismConfigurationSelector> mechanismConfigurationSelector) {
+            this.mechanismConfigurationSelectorSupplier = mechanismConfigurationSelector;
+
+            return this;
+        }
+
         public UndertowServer build() {
             return new UndertowCoreServer(createRootHttpHandler(), port, deploymentName, serverSslContext);
         }
@@ -179,10 +186,12 @@ public class UndertowCoreServer extends UndertowServer {
 
             return HttpAuthenticationFactory.builder()
                     .setSecurityDomain(securityDomain)
-                    .setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(
-                            MechanismConfiguration.builder()
-                                    .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName("Elytron Realm").build())
-                                    .build()))
+                    .setMechanismConfigurationSelector(
+                                mechanismConfigurationSelectorSupplier != null ? mechanismConfigurationSelectorSupplier.get() : MechanismConfigurationSelector.constantSelector(
+                                    MechanismConfiguration.builder()
+                                            .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName("Elytron Realm").build())
+                                            .build())
+                    )
                     .setFactory(factory)
                     .build();
         }
