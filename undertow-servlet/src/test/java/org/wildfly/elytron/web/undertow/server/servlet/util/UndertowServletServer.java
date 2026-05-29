@@ -60,22 +60,26 @@ public class UndertowServletServer extends UndertowServer {
     private final String authenticationMechanism;
     private final String deploymentName;
     private final Map<String, String> additionalDeployments;
+    private final String securityRoles;
+    private final String roleAllowed;
 
     private Undertow undertowServer;
 
     protected UndertowServletServer(Supplier<SSLContext> serverSslContext, int port, String contextRoot, final String authenticationMechanism,
             final SecurityDomain securityDomain, final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory, final String deploymentName,
-            Map<String, String> additionalDeployments) {
+            Map<String, String> additionalDeployments, String securityRoles, String roleAllowed) {
         super(serverSslContext, port, contextRoot, SERVLET);
         this.authenticationMechanism = authenticationMechanism;
         this.securityDomain = securityDomain;
         this.httpServerAuthenticationMechanismFactory = httpServerAuthenticationMechanismFactory;
         this.deploymentName = deploymentName;
         this.additionalDeployments = additionalDeployments;
+        this.securityRoles = securityRoles;
+        this.roleAllowed = roleAllowed;
     }
 
     private DeploymentInfo createDeployment(final String deploymentName, final String contextRoot) {
-        return Servlets.deployment()
+        DeploymentInfo deployment =  Servlets.deployment()
             .setClassLoader(TestServlet.class.getClassLoader())
             .setContextPath(contextRoot)
             .setDeploymentName(deploymentName)
@@ -83,7 +87,7 @@ public class UndertowServletServer extends UndertowServer {
             .addSecurityConstraint(new SecurityConstraint()
                 .addWebResourceCollection(new WebResourceCollection()
                         .addUrlPattern(SERVLET + "/*"))
-                .addRoleAllowed("**")
+                .addRoleAllowed(roleAllowed.isEmpty() ? "**" : roleAllowed)
                 .setEmptyRoleSemantic(SecurityInfo.EmptyRoleSemantic.DENY))
             .addServlets(Servlets.servlet(TestServlet.class)
                 .addMapping("/")
@@ -93,6 +97,12 @@ public class UndertowServletServer extends UndertowServer {
                     .addMapping("/login"),
                 Servlets.servlet(LogoutServlet.class)
                     .addMapping("/logout"));
+
+        if(!securityRoles.isEmpty()) {
+            deployment.addSecurityRoles(securityRoles);
+        }
+
+        return deployment;
     }
 
     @Override
@@ -162,6 +172,8 @@ public class UndertowServletServer extends UndertowServer {
         private HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory;
         String deploymentName = "helloworld.war";
         private Map<String, String> additionalDeployments = new HashMap<>();
+        private String securityRoles = "";
+        private String roleAllowed = "";
 
         public Builder setAuthenticationMechanism(final String authenticationMechanism) {
             this.authenticationMechanism = authenticationMechanism;
@@ -215,9 +227,19 @@ public class UndertowServletServer extends UndertowServer {
             return this;
         }
 
+        public Builder setSecurityRoles(final String securityRoles) {
+            this.securityRoles = securityRoles;
+            return this;
+        }
+
+        public Builder setRoleAllowed(final String roleAllowed) {
+            this.roleAllowed = roleAllowed;
+            return this;
+        }
+
         public UndertowServer build() throws Exception {
             return new UndertowServletServer(serverSslContext, port, contextRoot, authenticationMechanism,
-                securityDomain, httpServerAuthenticationMechanismFactory, deploymentName, additionalDeployments);
+                securityDomain, httpServerAuthenticationMechanismFactory, deploymentName, additionalDeployments, securityRoles, roleAllowed);
         }
 
 
