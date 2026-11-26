@@ -66,10 +66,10 @@ class ElytronAuthorizationManager implements AuthorizationManager {
 
         List<Permission> permissions = new ArrayList<>();
 
-        permissions.add(new WebResourcePermission(getCanonicalURI(request), request.getMethod()));
+        permissions.add(new WebResourcePermission(getCanonicalURI(request, true), request.getMethod()));
 
         for (String roleName : securityIdentity.getRoles("web", true)) {
-            permissions.add(new WebRoleRefPermission(getCanonicalURI(request), roleName));
+            permissions.add(new WebRoleRefPermission(getCanonicalURI(request, false), roleName));
         }
 
         for (Permission permission : permissions) {
@@ -86,10 +86,14 @@ class ElytronAuthorizationManager implements AuthorizationManager {
         return DefaultAuthorizationManager.INSTANCE.transportGuarantee(currentConnectionGuarantee, configuredRequiredGuarantee, request);
     }
 
-    private String getCanonicalURI(HttpServletRequest request) {
+    private String getCanonicalURI(HttpServletRequest request, boolean escapeColon) {
         String canonicalURI = request.getRequestURI().substring(request.getContextPath().length());
-        if (canonicalURI == null || canonicalURI.equals("/"))
+        if (canonicalURI == null || canonicalURI.equals("/")) {
             canonicalURI = "";
+        }
+        if (escapeColon) {
+            canonicalURI = canonicalURI.replace(":", "%3A");
+        }
         return canonicalURI;
     }
 }
